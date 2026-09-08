@@ -12,12 +12,16 @@ The key boundary is:
 
 > **Proposal is not authorization. Authorization is not execution. Execution is not outcome.**
 
-The contract gives the agent a **$1,000 delegated payment limit**: up to $500 can run autonomously; $501–$1,000 requires review; above $1,000 is denied.
+The contract gives the agent a **$1,000 delegated payment limit**:
+
+- **$500 or less → ALLOW** and execute automatically
+- **$501–$1,000 → ASK** and require human approval
+- **Above $1,000 → DENY** and do not invoke the payment tool
 
 | Invoice | Amount | Authority result | What happens |
 | --- | ---: | --- | --- |
 | INV-1041 | $480 | ALLOW | Simulated payment is submitted |
-| INV-1042 | $800 | ASK | The payment request waits for human approval |
+| INV-1042 | $800 | ASK → APPROVE | Human approval is recorded, then payment is submitted |
 | INV-1043 | $8,400 | DENY | No payment execution is permitted |
 
 The intentionally repetitive workflow makes the authority boundary visible instead of burying it in agent output.
@@ -43,10 +47,16 @@ The intentionally repetitive workflow makes the authority boundary visible inste
                     │            │            │
                     ▼            ▼            ▼
                  execute      approval     blocked
-                    │
-                    └────────────┬─────────────┘
-                                 ▼
-                           Ledger receipt
+                    │            │
+                    │            ▼
+                    │         approve
+                    │            │
+                    └──────┬─────┘
+                           ▼
+                       execute
+                           │
+                           ▼
+                     Ledger receipt
 
 Ledger chain:
 REQUEST → EVIDENCE → PROPOSAL → AUTHORIZATION →
