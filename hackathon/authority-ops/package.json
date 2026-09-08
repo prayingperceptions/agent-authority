@@ -1,0 +1,23 @@
+{
+  "name": "authority-ops",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A professional invoice agent demonstrating explicit delegated authority with Strands Agents and Agent Authority.",
+  "license": "MIT",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "demo": "tsc -p tsconfig.demo.json && node .tmp/demo.js",
+    "test": "tsc -p tsconfig.demo.json && node .tmp/test.js",
+    "live": "tsc -p tsconfig.json && node dist/live-agent.js"
+  },
+  "dependencies": {
+    "@strands-agents/sdk": "latest",
+    "zod": "^4.1.11"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "typescript": "^5.9.2"
+  }
+}
