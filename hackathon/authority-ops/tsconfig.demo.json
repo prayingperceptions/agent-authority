@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "outDir": "dist-demo",
+    "rootDir": "src"
+  },
+  "include": [
+    "src/authority.ts",
+    "src/domain.ts",
+    "src/ledger.ts",
+    "src/policy.ts",
+    "src/demo.ts",
+    "src/test.ts",
+    "src/node-shims.d.ts"
+  ]
+}
