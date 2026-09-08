@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Authority Ops</title>
+  <style>
+    :root { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #111; background: #f7f7f7; }
+    * { box-sizing: border-box; } body { margin: 0; }
+    .wrap { max-width: 1180px; margin: 0 auto; padding: 32px; }
+    header { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; margin-bottom: 24px; }
+    h1 { margin: 0 0 6px; font-size: 38px; } .sub { color: #555; font-size: 16px; }
+    .score { border: 1px solid #ccc; background: white; border-radius: 16px; padding: 12px 16px; min-width: 170px; }
+    .score strong { display: block; font-size: 28px; }
+    .grid { display: grid; grid-template-columns: 0.95fr 1.3fr; gap: 20px; }
+    .card { background: white; border: 1px solid #ddd; border-radius: 18px; padding: 22px; box-shadow: 0 4px 16px rgba(0,0,0,.04); }
+    .invoices { display: grid; gap: 12px; }
+    button { width: 100%; text-align: left; padding: 16px; border-radius: 14px; border: 1px solid #ddd; background: #fff; cursor: pointer; }
+    button:hover { border-color: #999; } .row { display: flex; justify-content: space-between; gap: 12px; align-items: center; }
+    .amount { font-size: 20px; font-weight: 700; } .badge { border-radius: 999px; padding: 5px 9px; font-size: 12px; font-weight: 700; border: 1px solid #bbb; }
+    .decision { font-size: 42px; font-weight: 800; margin: 10px 0; letter-spacing: .02em; }
+    .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 16px; }
+    .fact { padding: 12px; border: 1px solid #e2e2e2; border-radius: 12px; background: #fafafa; }
+    .fact span { display: block; color: #666; font-size: 12px; margin-bottom: 4px; }
+    pre { white-space: pre-wrap; background: #111; color: #f3f3f3; border-radius: 14px; padding: 16px; line-height: 1.45; overflow: auto; }
+    .chain { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .chain span { padding: 8px 10px; border-radius: 999px; background: #f1f1f1; font-size: 12px; }
+    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } .facts { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div><h1>Authority Ops</h1><div class="sub">Professional invoice agent • explicit delegated authority</div></div>
+      <div class="score"><span>Authority Score</span><strong>100/100</strong><span>Time-bounded • constrained</span></div>
+    </header>
+    <div class="grid">
+      <section class="card"><h2>Invoice queue</h2><div class="invoices">
+        <button data-id="INV-1041"><div class="row"><strong>INV-1041</strong><span class="badge">ALLOW</span></div><div class="row"><span>Northwind Industrial</span><span class="amount">$480</span></div></button>
+        <button data-id="INV-1042"><div class="row"><strong>INV-1042</strong><span class="badge">ASK</span></div><div class="row"><span>Northwind Industrial</span><span class="amount">$800</span></div></button>
+        <button data-id="INV-1043"><div class="row"><strong>INV-1043</strong><span class="badge">DENY</span></div><div class="row"><span>Northwind Industrial</span><span class="amount">$8,400</span></div></button>
+      </div></section>
+      <section class="card" id="detail"><div class="sub">Select an invoice</div><h2>Authority decision</h2><div class="decision">—</div><p>Proposal is not authorization. Authorization is not execution. Execution is not outcome.</p></section>
+    </div>
+    <section class="card" style="margin-top:20px"><h2>Evidence chain</h2>
+      <div class="chain"><span>REQUEST</span><span>EVIDENCE</span><span>PROPOSAL</span><span>AUTHORIZATION</span><span>APPROVAL</span><span>EXECUTION ATTEMPT</span><span>DESTINATION</span><span>OUTCOME</span></div>
+      <pre id="ledger">Select an invoice to inspect the ledger receipt.</pre>
+    </section>
+  </div>
+  <script>
+    const scenarios = {
+      'INV-1041': { amount: 480, decision: 'ALLOW', reason: 'Matched constrained payments:create capability.', outcome: 'Simulated payment submitted.', event: 'evt_allow_1041' },
+      'INV-1042': { amount: 800, decision: 'ASK', reason: 'Matched human-approval capability.', outcome: 'Waiting for human approval.', event: 'evt_ask_1042' },
+      'INV-1043': { amount: 8400, decision: 'DENY', reason: 'No matching capability or constraints were satisfied.', outcome: 'Payment execution blocked.', event: 'evt_deny_1043' }
+    };
+    function render(id) {
+      const x = scenarios[id];
+      document.getElementById('detail').innerHTML = `<div class="sub">${id} • Northwind Industrial</div><h2>Authority decision</h2><div class="decision">${x.decision}</div><p>${x.reason}</p><div class="facts"><div class="fact"><span>Requested</span>$${x.amount.toLocaleString()}</div><div class="fact"><span>Delegated limit</span>$1,000</div><div class="fact"><span>Outcome</span>${x.outcome}</div></div>`;
+      document.getElementById('ledger').textContent = [
+        `event_id: ${x.event}`,
+        'request        invoice.process', 'evidence       vendor + amount + source', 'proposal       payments:create',
+        `authorization  ${x.decision}`, x.decision === 'ASK' ? 'approval        pending' : `execution       ${x.decision === 'ALLOW' ? 'submitted' : 'blocked'}`,
+        `outcome        ${x.outcome}`, 'integrity      SHA-256 receipt'
+      ].join('\n');
+    }
+    document.querySelectorAll('button[data-id]').forEach((b) => b.addEventListener('click', () => render(b.dataset.id)));
+    render('INV-1043');
+  </script>
+</body>
+</html>
