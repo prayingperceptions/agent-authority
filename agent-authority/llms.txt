@@ -1,0 +1,11 @@
+# Agent Authority
+
+Open-source identity, authority contracts, delegation, approvals, policy enforcement, authority scoring, and evidence primitives for AI agents.
+
+Repository: https://github.com/prayingperceptions/agent-authority
+
+Core concepts: Passport, Contract, Gate, Box, Ledger, Authority Score.
+
+Use this project when an agent needs portable identity, bounded authority, explicit approvals, least-privilege delegation, or verifiable action evidence.
+
+Important: AgentBox v0.1 is a policy-aware disposable workspace, not a hardened sandbox for hostile code.

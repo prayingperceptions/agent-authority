@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import * as core from '../../packages/core/dist/index.js';
+const agentKeys=core.generateAgentKeypair();
+const passport=core.createPassport({issuer:'demo-org',publicKeyJwk:agentKeys.publicKeyJwk});
+const contract=core.createContract({subjectAgentId:passport.agentId,issuer:'demo-org',purpose:'Send a reviewed email',expiresAt:'2099-01-01T00:00:00.000Z',capabilities:[{resource:'email',actions:['send']}],approvals:{requiredFor:['email:send']}});
+const gateKeys=core.generateAgentKeypair(); const gate=new core.AuthorityGate({privateKeyJwk:gateKeys.privateKeyJwk,signer:'authority-gate'});
+const gateResult=gate.check(contract,{agentId:passport.agentId,resource:'email',action:'send',input:{to:'example@example.com'}});
+assert.equal(gateResult.decision,'ask'); assert.ok(gateResult.signedEvent);
+const approvalRequest=core.createApprovalRequest({contract,event:gateResult.event,requestedBy:passport.agentId});
+const approvalReceipt=core.createApprovalReceipt({request:approvalRequest,agentId:passport.agentId,approvedBy:'human-reviewer',decision:'approved',reason:'Reviewed destination'});
+const signedApprovalReceipt=core.signEnvelope(approvalReceipt,gateKeys.privateKeyJwk,'human-reviewer');
+const bundle=core.createLedgerEvidenceBundle({passport,contract,event:gateResult.event,authorityEvent:gateResult.signedEvent,approvalRequest,approvalReceipt,signedApprovalReceipt,agentName:'ledger-demo-agent',framework:'generic',approvalStatus:'approved',tools:[{name:'email',invocationCount:1,resultStatus:'success'}],sources:['local:approval-review'],redactedFields:['request.input.to'],cost:{currency:'USD',total_tokens:123}});
+assert.equal(core.verifyLedgerReceipt(bundle.receipt),true);
+assert.equal(core.verifyEnvelope(bundle.authorityEvent,gateKeys.publicKeyJwk),true);
+assert.equal(core.verifyEnvelope(bundle.signedApprovalReceipt,gateKeys.publicKeyJwk),true);
+fs.mkdirSync('.agent-authority/receipts',{recursive:true}); fs.writeFileSync('.agent-authority/receipts/ledger-evidence.json',JSON.stringify(bundle,null,2));
+console.log('LEDGER_INTEROP_OK');

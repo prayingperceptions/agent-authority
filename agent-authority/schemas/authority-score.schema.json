@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/prayingperceptions/agent-authority/blob/main/schemas/authority-score.schema.json",
+  "title": "Agent Authority Score v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "score", "grade", "findings"],
+  "properties": {
+    "version": {"const": "0.1"},
+    "score": {"type": "integer", "minimum": 0, "maximum": 100},
+    "grade": {"enum": ["A", "B", "C", "D", "F"]},
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "severity", "points", "title", "rationale"],
+        "properties": {
+          "id": {"type": "string"},
+          "severity": {"enum": ["critical", "high", "medium", "low", "positive"]},
+          "points": {"type": "integer"},
+          "title": {"type": "string"},
+          "rationale": {"type": "string"}
+        }
+      }
+    }
+  }
+}

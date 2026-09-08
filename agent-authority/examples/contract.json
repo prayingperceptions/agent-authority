@@ -1,0 +1,20 @@
+{
+  "version": "0.1",
+  "contractId": "contract_demo",
+  "subjectAgentId": "agent_demo",
+  "issuer": "org_jubilee",
+  "purpose": "Prepare a monthly financial report",
+  "createdAt": "2026-09-07T00:00:00.000Z",
+  "expiresAt": "2026-10-07T00:00:00.000Z",
+  "capabilities": [
+    { "resource": "finance.database", "actions": ["read"] },
+    { "resource": "reports", "actions": ["write"] },
+    { "resource": "email", "actions": ["send"], "decision": "ask" }
+  ],
+  "approvals": {
+    "requiredFor": ["email:send"]
+  },
+  "provenance": {
+    "evidence": ["invoice_1042.pdf", "ledger_2026_08.csv"]
+  }
+}

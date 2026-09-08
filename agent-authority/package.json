@@ -1,0 +1,29 @@
+{
+  "name": "agent-authority",
+  "version": "0.1.6",
+  "private": true,
+  "description": "Open-source identity, authority contracts, delegation, policy enforcement, approvals, and audit primitives for AI agents.",
+  "keywords": ["ai agents", "agent authorization", "agent identity", "agent permissions", "mcp security", "mcp authorization", "agent security", "capability security", "delegation", "least privilege", "ai safety", "typescript", "open source"],
+  "license": "MIT",
+  "repository": {"type": "git", "url": "https://github.com/prayingperceptions/agent-authority.git"},
+  "bugs": {"url": "https://github.com/prayingperceptions/agent-authority/issues"},
+  "homepage": "https://github.com/prayingperceptions/agent-authority#readme",
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build:core && npm run build:box && npm run build:cli",
+    "build:core": "tsc -p packages/core/tsconfig.json",
+    "build:cli": "tsc -p packages/cli/tsconfig.json",
+    "test": "npm run build && node tests/core-smoke.mjs && node tests/smoke.mjs && node tests/box-smoke.mjs && node tests/red-team.mjs",
+    "demo": "npm run build:core && node examples/gate-demo.mjs",
+    "demo:ledger": "npm run build:core && node examples/ledger-interop/index.mjs",
+    "demo:score": "npm run build:core && tsc --target ES2022 --module NodeNext --moduleResolution NodeNext --strict --esModuleInterop --skipLibCheck examples/authority-score.ts --outDir .tmp-score && node .tmp-score/authority-score.js",
+    "build:box": "tsc -p packages/box/tsconfig.json"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2",
+    "@types/node": "^24.3.0"
+  }
+}

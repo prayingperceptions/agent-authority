@@ -1,0 +1,128 @@
+{
+  "version": "0.1",
+  "receipt": {
+    "schema_version": "receipt-v1",
+    "receipt_id": "receipt_event_22e1fba6-acfc-4b93-8f6f-74794b94d217",
+    "agent": {
+      "agent_id": "agent_92b337e9-5105-4a87-8eb2-ff18becd9ddc",
+      "passport_id": "passport_772de83e-3c25-4a29-9a11-7ad5c22ec097",
+      "name": "ledger-demo-agent",
+      "framework": "generic"
+    },
+    "run": {
+      "start_time": "2026-09-08T01:50:31.394Z",
+      "end_time": "2026-09-08T01:50:31.394Z",
+      "status": "completed",
+      "purpose": "Send a reviewed email",
+      "environment": "local"
+    },
+    "execution": {
+      "step_count": 1,
+      "retry_count": 0,
+      "human_approval_status": "approved"
+    },
+    "tools": [
+      {
+        "name": "email",
+        "invocationCount": 1,
+        "resultStatus": "success"
+      }
+    ],
+    "sources": [
+      "local:approval-review"
+    ],
+    "policy": {
+      "decisions": [
+        {
+          "decision": "ask",
+          "event_id": "event_22e1fba6-acfc-4b93-8f6f-74794b94d217",
+          "resource": "email",
+          "action": "send",
+          "reasons": [
+            "Contract explicitly requires human approval."
+          ]
+        }
+      ],
+      "violations": []
+    },
+    "cost": {
+      "currency": "USD",
+      "total_tokens": 123
+    },
+    "redaction": {
+      "occurred": true,
+      "fields_removed": [
+        "request.input.to"
+      ]
+    },
+    "integrity": {
+      "receipt_hash": "8929a802cceeaf57bb887b9eaa493fb21377fb690f18933974dd5b253d8b6275",
+      "hash_algorithm": "SHA-256",
+      "authority_event_hash": "30c13ed7382d798b1e56bf87b10ef6a1697e143b3ffb0b15cb8d765d7c11192c"
+    },
+    "errors": []
+  },
+  "authorityEvent": {
+    "payload": {
+      "version": "0.1",
+      "eventId": "event_22e1fba6-acfc-4b93-8f6f-74794b94d217",
+      "timestamp": "2026-09-08T01:50:31.394Z",
+      "agentId": "agent_92b337e9-5105-4a87-8eb2-ff18becd9ddc",
+      "contractId": "contract_ddb40ebc-a7e6-4959-b540-3aa9545e7e61",
+      "request": {
+        "agentId": "agent_92b337e9-5105-4a87-8eb2-ff18becd9ddc",
+        "resource": "email",
+        "action": "send",
+        "input": {
+          "to": "example@example.com"
+        }
+      },
+      "decision": "ask",
+      "reasons": [
+        "Contract explicitly requires human approval."
+      ]
+    },
+    "signature": "TRVdUsYzqM4_66oARNR-ImlPj7smzO39N5PQKDsO4aq_Kikst35F-diT7J9Evb_j3YWs9cF2BoVxGoYlr6pTBQ",
+    "algorithm": "Ed25519",
+    "signer": "authority-gate"
+  },
+  "approvalRequest": {
+    "version": "0.1",
+    "approvalId": "approval_9fb98fa1-06c8-4c49-90a5-eb680f1c2e71",
+    "contractId": "contract_ddb40ebc-a7e6-4959-b540-3aa9545e7e61",
+    "eventId": "event_22e1fba6-acfc-4b93-8f6f-74794b94d217",
+    "requestedBy": "agent_92b337e9-5105-4a87-8eb2-ff18becd9ddc",
+    "createdAt": "2026-09-08T01:50:31.395Z",
+    "actionDigest": "0ba3fabaf992ff903bc97b98256bc4f5d53037e8b20e04f1e215c9947de3ec7f",
+    "purpose": "Send a reviewed email"
+  },
+  "approvalReceipt": {
+    "version": "0.1",
+    "approvalId": "approval_9fb98fa1-06c8-4c49-90a5-eb680f1c2e71",
+    "eventId": "event_22e1fba6-acfc-4b93-8f6f-74794b94d217",
+    "contractId": "contract_ddb40ebc-a7e6-4959-b540-3aa9545e7e61",
+    "agentId": "agent_92b337e9-5105-4a87-8eb2-ff18becd9ddc",
+    "approvedBy": "human-reviewer",
+    "approvedAt": "2026-09-08T01:50:31.396Z",
+    "decision": "approved",
+    "reason": "Reviewed destination",
+    "actionDigest": "0ba3fabaf992ff903bc97b98256bc4f5d53037e8b20e04f1e215c9947de3ec7f"
+  },
+  "signedApprovalReceipt": {
+    "payload": {
+      "version": "0.1",
+      "approvalId": "approval_9fb98fa1-06c8-4c49-90a5-eb680f1c2e71",
+      "eventId": "event_22e1fba6-acfc-4b93-8f6f-74794b94d217",
+      "contractId": "contract_ddb40ebc-a7e6-4959-b540-3aa9545e7e61",
+      "agentId": "agent_92b337e9-5105-4a87-8eb2-ff18becd9ddc",
+      "approvedBy": "human-reviewer",
+      "approvedAt": "2026-09-08T01:50:31.396Z",
+      "decision": "approved",
+      "reason": "Reviewed destination",
+      "actionDigest": "0ba3fabaf992ff903bc97b98256bc4f5d53037e8b20e04f1e215c9947de3ec7f"
+    },
+    "signature": "_3i4e1pp05Mz8Gvu8-yc7rLE5a5B17JclG-ZGR76SUbB0whtUL_chfWJjSSjxBem5LpPHZFfQizUzfdPWTRKAQ",
+    "algorithm": "Ed25519",
+    "signer": "human-reviewer"
+  }
+}

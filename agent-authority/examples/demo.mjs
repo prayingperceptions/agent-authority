@@ -1,0 +1,6 @@
+import { canDelegate, createContract, createPassport, evaluate, generateAgentKeypair, signEnvelope, verifyEnvelope } from "../packages/core/dist/index.js";
+const keys = generateAgentKeypair();
+const passport = createPassport({ issuer: "demo-org", publicKeyJwk: keys.publicKeyJwk, metadata: { role: "research-agent" } });
+const contract = createContract({ subjectAgentId: passport.agentId, issuer: passport.issuer, purpose: "Prepare a report from approved sources", expiresAt: "2099-01-01T00:00:00.000Z", capabilities: [{ resource: "web.search", actions: ["query"] }, { resource: "reports", actions: ["write"] }, { resource: "email", actions: ["send"] }], approvals: { requiredFor: ["email:send"] } });
+const signed = signEnvelope(contract, keys.privateKeyJwk, "demo-agent");
+console.log({ passport: passport.passportId, signedContractValid: verifyEnvelope(signed, keys.publicKeyJwk), reportWrite: evaluate(contract, { agentId: passport.agentId, resource: "reports", action: "write" }).decision, emailSend: evaluate(contract, { agentId: passport.agentId, resource: "email", action: "send" }).decision, childDelegationAllowed: canDelegate(contract.capabilities, [{ resource: "web.search", actions: ["query"] }]) });

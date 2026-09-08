@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/agent-authority/delegation.schema.json",
+  "title": "Agent Delegation v0.1",
+  "type": "object",
+  "required": ["version", "delegationId", "issuer", "delegate", "capabilities", "notBefore", "expiresAt", "nonce"],
+  "properties": {
+    "version": { "const": "0.1" },
+    "delegationId": { "type": "string", "minLength": 1 },
+    "issuer": { "type": "string", "minLength": 1 },
+    "delegate": { "type": "string", "minLength": 1 },
+    "parentPassportId": { "type": "string" },
+    "capabilities": { "type": "array", "items": { "type": "object", "required": ["resource", "actions"], "properties": { "resource": { "type": "string" }, "actions": { "type": "array", "items": { "type": "string" } }, "constraints": { "type": "object", "additionalProperties": true }, "decision": { "enum": ["allow", "deny", "ask", "simulate"] } }, "additionalProperties": false } },
+    "notBefore": { "type": "string", "format": "date-time" },
+    "expiresAt": { "type": "string", "format": "date-time" },
+    "nonce": { "type": "string", "minLength": 1 }
+  },
+  "additionalProperties": false
+}

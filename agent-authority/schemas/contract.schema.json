@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/prayingperceptions/agent-authority/blob/main/schemas/contract.schema.json",
+  "title": "Agent Contract v0.1",
+  "type": "object",
+  "required": ["version", "contractId", "subjectAgentId", "issuer", "purpose", "createdAt", "expiresAt", "capabilities"],
+  "properties": {
+    "version": { "const": "0.1" },
+    "contractId": { "type": "string", "minLength": 1 },
+    "subjectAgentId": { "type": "string", "minLength": 1 },
+    "issuer": { "type": "string", "minLength": 1 },
+    "purpose": { "type": "string", "minLength": 1 },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "expiresAt": { "type": "string", "format": "date-time" },
+    "capabilities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["resource", "actions"],
+        "properties": {
+          "resource": { "type": "string", "minLength": 1 },
+          "actions": { "type": "array", "items": { "type": "string", "minLength": 1 }, "minItems": 1 },
+          "constraints": { "type": "object", "additionalProperties": true },
+          "decision": { "enum": ["allow", "deny", "ask", "simulate"] }
+        },
+        "additionalProperties": false
+      }
+    },
+    "approvals": {
+      "type": "object",
+      "required": ["requiredFor"],
+      "properties": { "requiredFor": { "type": "array", "items": { "type": "string" } } },
+      "additionalProperties": false
+    },
+    "provenance": {
+      "type": "object",
+      "required": ["evidence"],
+      "properties": { "evidence": { "type": "array", "items": { "type": "string" } } },
+      "additionalProperties": false
+    },
+    "delegationChain": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": false
+}
