@@ -1,6 +1,6 @@
 {
   "private": true,
-  "name": "@jubileelabs/agent-authority-cli",
+  "name": "agent-authority-cli",
   "version": "0.1.6",
   "type": "module",
   "main": "dist/index.js",
@@ -8,7 +8,7 @@
     "build": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@jubileelabs/agent-authority-core": "0.1.6"
+    "agent-authority-core": "0.1.6"
   },
   "devDependencies": {
     "@types/node": "^24.3.0",
