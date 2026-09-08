@@ -4,11 +4,12 @@ import { AgentAuthorityAdapter, authorityScore, buildContract } from './authorit
 import type { AgentPassport, Invoice } from './domain.js';
 
 const agentId = 'agent_ap_ops';
+const paymentDestination = 'payments:demo-ledger';
 const passport: AgentPassport = {
   version: '0.1', passportId: 'passport_live_ap_ops', agentId, issuer: 'authority-ops-demo',
   expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
 };
-const contract = buildContract(agentId, 1000);
+const contract = buildContract(agentId, 1000, paymentDestination);
 const authority = new AgentAuthorityAdapter(passport, contract);
 
 const invoices: Invoice[] = [
@@ -30,15 +31,38 @@ const readInvoice = tool({
 
 const requestPayment = tool({
   name: 'request_payment',
-  description: 'Request a payment. This tool MUST call the authority layer before any simulated payment is created.',
-  inputSchema: z.object({ invoiceId: z.string(), amount: z.number(), vendorId: z.string(), currency: z.string() }),
-  callback: ({ invoiceId, amount, vendorId, currency }) => {
+  description: 'Request payment for a known invoice. Invoice amount, vendor, currency, and destination are derived from trusted application state and evaluated by the authority gate.',
+  inputSchema: z.object({ invoiceId: z.string() }),
+  callback: ({ invoiceId }) => {
     const invoice = invoices.find((x) => x.invoiceId === invoiceId);
     if (!invoice) throw new Error(`Unknown invoice ${invoiceId}`);
-    const { result, event } = authority.evaluate({ agentId, resource: 'payments', action: 'create', input: { currency, amount } });
+
+    const request = {
+      agentId,
+      resource: 'payments',
+      action: 'create',
+      input: {
+        invoiceId: invoice.invoiceId,
+        vendorId: invoice.vendorId,
+        currency: invoice.currency,
+        amount: invoice.amount,
+        destination: paymentDestination,
+      },
+    };
+
+    const { result, event } = authority.evaluate(request);
     return {
-      invoiceId, vendorId, amount, currency, decision: result.decision, reasons: result.reasons,
-      authorityEventId: event.eventId, authorityScore: authorityScore(contract), executed: result.decision === 'allow',
+      invoiceId,
+      vendorId: invoice.vendorId,
+      amount: invoice.amount,
+      currency: invoice.currency,
+      destination: paymentDestination,
+      decision: result.decision,
+      reasons: result.reasons,
+      authorityEventId: event.eventId,
+      authorityActionDigest: event.actionDigest,
+      authorityScore: authorityScore(contract),
+      executed: result.decision === 'allow',
     };
   },
 });
@@ -54,10 +78,11 @@ const agent = new Agent({
   tools: [readInvoice, requestPayment],
   systemPrompt: [
     'You are Authority Ops, a professional accounts-payable operations agent.',
-    'Your job is to inspect invoices and propose or request payment actions.',
+    'Inspect invoices and request payment only through the request_payment tool.',
     'Never treat your own proposal as authorization.',
-    'Payment execution is only possible through request_payment, which is policy-controlled.',
-    'For a user-selected invoice, explain the proposal, the authority decision, and the resulting outcome.',
+    'Never invent or override invoice amount, vendor, currency, invoice identity, or payment destination.',
+    'The request_payment tool derives authoritative payment fields from the trusted invoice record and enforces the delegated authority contract.',
+    'For the selected invoice, explain the proposal, authority decision, and outcome.',
   ].join(' '),
 });
 

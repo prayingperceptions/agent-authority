@@ -83,13 +83,29 @@ export function authorityScore(contract: AgentContract): number {
   return Math.max(0, Math.min(100, score));
 }
 
-export function buildContract(agentId: string, maxPayment: number): AgentContract {
+export function buildContract(agentId: string, maxPayment: number, paymentDestination = 'payments:demo-ledger'): AgentContract {
   const now = new Date();
   const expiry = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-  const autonomous: Capability = { resource: 'payments', actions: ['create'], constraints: { currency: 'USD', amount_lte: Math.min(500, maxPayment) }, decision: 'allow' };
-  const review: Capability = { resource: 'payments', actions: ['create'], constraints: { currency: 'USD', amount_lte: maxPayment }, decision: 'ask' };
+  const autonomous: Capability = {
+    resource: 'payments',
+    actions: ['create'],
+    constraints: { currency: 'USD', amount_lte: Math.min(500, maxPayment), destination: paymentDestination },
+    decision: 'allow',
+  };
+  const review: Capability = {
+    resource: 'payments',
+    actions: ['create'],
+    constraints: { currency: 'USD', amount_lte: maxPayment, destination: paymentDestination },
+    decision: 'ask',
+  };
   return {
-    version: '0.1', contractId: `contract_${randomUUID()}`, subjectAgentId: agentId, issuer: 'authority-ops-demo',
-    purpose: 'Process vendor invoices within delegated spending authority.', createdAt: now.toISOString(), expiresAt: expiry.toISOString(), capabilities: [autonomous, review]
+    version: '0.1',
+    contractId: `contract_${randomUUID()}`,
+    subjectAgentId: agentId,
+    issuer: 'authority-ops-demo',
+    purpose: 'Process vendor invoices within delegated spending authority.',
+    createdAt: now.toISOString(),
+    expiresAt: expiry.toISOString(),
+    capabilities: [autonomous, review],
   };
 }
