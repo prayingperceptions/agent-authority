@@ -1,0 +1,30 @@
+name: Authority Ops
+
+on:
+  push:
+    branches: [main, hackathon-authority-ops]
+    paths:
+      - 'hackathon/authority-ops/**'
+      - '.github/workflows/authority-ops.yml'
+  pull_request:
+    paths:
+      - 'hackathon/authority-ops/**'
+      - '.github/workflows/authority-ops.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: hackathon/authority-ops
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: hackathon/authority-ops/package.json
+      - run: npm install --no-audit --no-fund
+      - run: npm run build
+      - run: npm test
+      - run: npm run demo
