@@ -24,4 +24,8 @@ assertEqual(wrongAgent.result.decision, 'deny');
 const overLimit = authority.evaluate({ agentId, resource: 'payments', action: 'create', input: { currency: 'USD', amount: 8400 } });
 assertEqual(overLimit.result.decision, 'deny');
 
+// The human-review boundary must remain bounded even after approval.
+assertEqual(review.event.request.input?.amount, 800);
+assertEqual(review.event.actionDigest.length, 64);
+
 console.log('✓ authority boundary tests passed');
