@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="650" viewBox="0 0 1200 650">
+  <rect width="1200" height="650" fill="#ffffff"/>
+  <text x="60" y="72" font-family="Arial, sans-serif" font-size="34" font-weight="700">Authority Ops</text>
+  <text x="60" y="108" font-family="Arial, sans-serif" font-size="20">Strands agent → delegated authority → controlled execution → evidence</text>
+  <rect x="60" y="170" width="260" height="150" rx="18" fill="#f5f5f5" stroke="#111" stroke-width="2"/>
+  <text x="190" y="225" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="700">Strands Agent</text>
+  <text x="190" y="260" text-anchor="middle" font-family="Arial, sans-serif" font-size="18">reason • propose • use tools</text>
+  <rect x="470" y="140" width="330" height="210" rx="18" fill="#f5f5f5" stroke="#111" stroke-width="2"/>
+  <text x="635" y="198" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="700">Agent Authority</text>
+  <text x="635" y="236" text-anchor="middle" font-family="Arial, sans-serif" font-size="18">Passport</text>
+  <text x="635" y="265" text-anchor="middle" font-family="Arial, sans-serif" font-size="18">Contract</text>
+  <text x="635" y="294" text-anchor="middle" font-family="Arial, sans-serif" font-size="18">Gate • Score • Evidence</text>
+  <defs><marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#111"/></marker></defs>
+  <line x1="320" y1="245" x2="470" y2="245" stroke="#111" stroke-width="3" marker-end="url(#arrow)"/>
+  <rect x="50" y="410" width="200" height="95" rx="16" fill="#f5f5f5" stroke="#111" stroke-width="2"/>
+  <rect x="310" y="410" width="200" height="95" rx="16" fill="#f5f5f5" stroke="#111" stroke-width="2"/>
+  <rect x="570" y="410" width="200" height="95" rx="16" fill="#f5f5f5" stroke="#111" stroke-width="2"/>
+  <rect x="830" y="410" width="300" height="95" rx="16" fill="#f5f5f5" stroke="#111" stroke-width="2"/>
+  <text x="150" y="468" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="700">ALLOW</text>
+  <text x="410" y="468" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="700">ASK</text>
+  <text x="670" y="468" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="700">DENY</text>
+  <text x="980" y="455" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="700">Ledger Receipt</text>
+  <text x="980" y="484" text-anchor="middle" font-family="Arial, sans-serif" font-size="17">request → outcome</text>
+  <line x1="635" y1="350" x2="150" y2="410" stroke="#111" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="635" y1="350" x2="410" y2="410" stroke="#111" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="635" y1="350" x2="670" y2="410" stroke="#111" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="250" y1="457" x2="830" y2="457" stroke="#111" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="600" y="590" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" font-weight="700">Proposal ≠ Authorization ≠ Execution ≠ Outcome</text>
+</svg>

@@ -1,0 +1,29 @@
+[
+  {
+    "invoiceId": "INV-1041",
+    "vendorId": "V-021",
+    "vendorName": "Northwind Industrial",
+    "amount": 480,
+    "currency": "USD",
+    "description": "Maintenance supplies",
+    "source": "ap:inbox/INV-1041.pdf"
+  },
+  {
+    "invoiceId": "INV-1042",
+    "vendorId": "V-021",
+    "vendorName": "Northwind Industrial",
+    "amount": 800,
+    "currency": "USD",
+    "description": "Quarterly service renewal",
+    "source": "ap:inbox/INV-1042.pdf"
+  },
+  {
+    "invoiceId": "INV-1043",
+    "vendorId": "V-021",
+    "vendorName": "Northwind Industrial",
+    "amount": 8400,
+    "currency": "USD",
+    "description": "Emergency equipment replacement",
+    "source": "ap:inbox/INV-1043.pdf"
+  }
+]
