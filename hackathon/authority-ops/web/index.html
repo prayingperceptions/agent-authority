@@ -5,65 +5,142 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Authority Ops</title>
   <style>
-    :root { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #111; background: #f7f7f7; }
-    * { box-sizing: border-box; } body { margin: 0; }
-    .wrap { max-width: 1180px; margin: 0 auto; padding: 32px; }
-    header { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; margin-bottom: 24px; }
-    h1 { margin: 0 0 6px; font-size: 38px; } .sub { color: #555; font-size: 16px; }
-    .score { border: 1px solid #ccc; background: white; border-radius: 16px; padding: 12px 16px; min-width: 170px; }
-    .score strong { display: block; font-size: 28px; }
-    .grid { display: grid; grid-template-columns: 0.95fr 1.3fr; gap: 20px; }
-    .card { background: white; border: 1px solid #ddd; border-radius: 18px; padding: 22px; box-shadow: 0 4px 16px rgba(0,0,0,.04); }
+    :root { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #10203a; background: #eef3f9; }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    .wrap { max-width: 1240px; margin: 0 auto; padding: 28px; }
+    header { display: flex; justify-content: space-between; align-items: center; gap: 24px; margin-bottom: 20px; }
+    .brand { display:flex; gap:14px; align-items:center; }
+    .brand img { width: 54px; height: 54px; }
+    h1 { margin: 0 0 4px; font-size: 34px; letter-spacing: -.02em; }
+    .sub { color: #58708f; font-size: 14px; }
+    .score { border: 1px solid #cbd7e5; background: white; border-radius: 16px; padding: 12px 16px; min-width: 175px; box-shadow: 0 6px 18px rgba(24,55,90,.06); }
+    .score strong { display: block; font-size: 28px; color:#0f5bd8; }
+    .topline { display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; margin-bottom:20px; }
+    .pill { background:#fff; border:1px solid #d5dfeb; border-radius:14px; padding:13px 15px; }
+    .pill b { display:block; margin-bottom:4px; }
+    .grid { display: grid; grid-template-columns: 0.85fr 1.5fr; gap: 20px; }
+    .card { background: white; border: 1px solid #d4deea; border-radius: 18px; padding: 20px; box-shadow: 0 8px 22px rgba(24,55,90,.06); }
     .invoices { display: grid; gap: 12px; }
-    button { width: 100%; text-align: left; padding: 16px; border-radius: 14px; border: 1px solid #ddd; background: #fff; cursor: pointer; }
-    button:hover { border-color: #999; } .row { display: flex; justify-content: space-between; gap: 12px; align-items: center; }
-    .amount { font-size: 20px; font-weight: 700; } .badge { border-radius: 999px; padding: 5px 9px; font-size: 12px; font-weight: 700; border: 1px solid #bbb; }
-    .decision { font-size: 42px; font-weight: 800; margin: 10px 0; letter-spacing: .02em; }
+    button.invoice { width: 100%; text-align: left; padding: 16px; border-radius: 14px; border: 1px solid #d7e0eb; background: #fff; cursor: pointer; transition: .15s ease; }
+    button.invoice:hover, button.invoice.active { border-color: #6e9fe9; box-shadow: 0 4px 14px rgba(32,97,210,.10); }
+    .row { display: flex; justify-content: space-between; gap: 12px; align-items: center; }
+    .amount { font-size: 20px; font-weight: 800; }
+    .badge { border-radius: 999px; padding: 5px 9px; font-size: 11px; font-weight: 800; border: 1px solid #c6d3e2; }
+    .allow { background:#e8f6ed; color:#0d7a39; border-color:#b9e0c7; }
+    .ask { background:#fff7df; color:#8b5b00; border-color:#ead59b; }
+    .deny { background:#fdeaea; color:#a51d1d; border-color:#efc1c1; }
+    .decision { font-size: 48px; font-weight: 900; margin: 10px 0; letter-spacing: .01em; }
     .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 16px; }
-    .fact { padding: 12px; border: 1px solid #e2e2e2; border-radius: 12px; background: #fafafa; }
-    .fact span { display: block; color: #666; font-size: 12px; margin-bottom: 4px; }
-    pre { white-space: pre-wrap; background: #111; color: #f3f3f3; border-radius: 14px; padding: 16px; line-height: 1.45; overflow: auto; }
+    .fact { padding: 13px; border: 1px solid #e0e7ef; border-radius: 12px; background: #f8fbff; }
+    .fact span { display: block; color: #6d8098; font-size: 11px; margin-bottom: 4px; text-transform:uppercase; letter-spacing:.05em; }
+    pre { white-space: pre-wrap; background: #0d1728; color: #ecf3ff; border-radius: 14px; padding: 16px; line-height: 1.5; overflow: auto; }
     .chain { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-    .chain span { padding: 8px 10px; border-radius: 999px; background: #f1f1f1; font-size: 12px; }
-    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } .facts { grid-template-columns: 1fr; } }
+    .chain span { padding: 8px 10px; border-radius: 999px; background: #edf3fb; border:1px solid #d8e2ee; font-size: 11px; font-weight:700; }
+    .actions { margin-top: 18px; display:flex; gap:10px; }
+    .primary { border:0; background:#175ed3; color:#fff; border-radius:12px; padding:12px 16px; font-weight:800; cursor:pointer; }
+    .primary:disabled { opacity:.45; cursor:not-allowed; }
+    .note { font-size: 12px; color:#60748c; margin-top:10px; }
+    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } .facts, .topline { grid-template-columns: 1fr; } header { align-items:flex-start; flex-direction:column; } }
   </style>
 </head>
 <body>
   <div class="wrap">
     <header>
-      <div><h1>Authority Ops</h1><div class="sub">Professional invoice agent • explicit delegated authority</div></div>
-      <div class="score"><span>Authority Score</span><strong>100/100</strong><span>Time-bounded • constrained</span></div>
+      <div class="brand">
+        <img src="../assets/architecture.svg" alt="Authority Ops" onerror="this.style.display='none'" />
+        <div>
+          <h1>Authority Ops</h1>
+          <div class="sub">Professional invoice agent • explicit delegated authority</div>
+        </div>
+      </div>
+      <div class="score"><span>Authority Score</span><strong>100/100</strong><span class="sub">Time-bounded • constrained</span></div>
     </header>
-    <div class="grid">
-      <section class="card"><h2>Invoice queue</h2><div class="invoices">
-        <button data-id="INV-1041"><div class="row"><strong>INV-1041</strong><span class="badge">ALLOW</span></div><div class="row"><span>Northwind Industrial</span><span class="amount">$480</span></div></button>
-        <button data-id="INV-1042"><div class="row"><strong>INV-1042</strong><span class="badge">ASK</span></div><div class="row"><span>Northwind Industrial</span><span class="amount">$800</span></div></button>
-        <button data-id="INV-1043"><div class="row"><strong>INV-1043</strong><span class="badge">DENY</span></div><div class="row"><span>Northwind Industrial</span><span class="amount">$8,400</span></div></button>
-      </div></section>
-      <section class="card" id="detail"><div class="sub">Select an invoice</div><h2>Authority decision</h2><div class="decision">—</div><p>Proposal is not authorization. Authorization is not execution. Execution is not outcome.</p></section>
+
+    <div class="topline">
+      <div class="pill"><b>Autonomous</b>$0–$500 → ALLOW</div>
+      <div class="pill"><b>Human review</b>$501–$1,000 → ASK</div>
+      <div class="pill"><b>Outside authority</b>&gt; $1,000 → DENY</div>
     </div>
-    <section class="card" style="margin-top:20px"><h2>Evidence chain</h2>
+
+    <div class="grid">
+      <section class="card">
+        <h2>Invoice queue</h2>
+        <div class="invoices">
+          <button class="invoice" data-id="INV-1041"><div class="row"><strong>INV-1041</strong><span class="badge allow">ALLOW</span></div><div class="row"><span>Northwind Industrial</span><span class="amount">$480</span></div></button>
+          <button class="invoice" data-id="INV-1042"><div class="row"><strong>INV-1042</strong><span class="badge ask">ASK</span></div><div class="row"><span>Northwind Industrial</span><span class="amount">$800</span></div></button>
+          <button class="invoice" data-id="INV-1043"><div class="row"><strong>INV-1043</strong><span class="badge deny">DENY</span></div><div class="row"><span>Northwind Industrial</span><span class="amount">$8,400</span></div></button>
+        </div>
+        <div class="note">Select a case to inspect the proposed action, gate decision, and evidence.</div>
+      </section>
+
+      <section class="card" id="detail"></section>
+    </div>
+
+    <section class="card" style="margin-top:20px">
+      <div class="row"><h2 style="margin:0">Evidence chain</h2><span class="sub">Receipt lifecycle</span></div>
       <div class="chain"><span>REQUEST</span><span>EVIDENCE</span><span>PROPOSAL</span><span>AUTHORIZATION</span><span>APPROVAL</span><span>EXECUTION ATTEMPT</span><span>DESTINATION</span><span>OUTCOME</span></div>
-      <pre id="ledger">Select an invoice to inspect the ledger receipt.</pre>
+      <pre id="ledger"></pre>
     </section>
   </div>
   <script>
     const scenarios = {
-      'INV-1041': { amount: 480, decision: 'ALLOW', reason: 'Matched constrained payments:create capability.', outcome: 'Simulated payment submitted.', event: 'evt_allow_1041' },
-      'INV-1042': { amount: 800, decision: 'ASK', reason: 'Matched human-approval capability.', outcome: 'Waiting for human approval.', event: 'evt_ask_1042' },
-      'INV-1043': { amount: 8400, decision: 'DENY', reason: 'No matching capability or constraints were satisfied.', outcome: 'Payment execution blocked.', event: 'evt_deny_1043' }
+      'INV-1041': { amount: 480, decision: 'ALLOW', reason: 'Matched constrained payments:create capability.', outcome: 'Simulated payment submitted.', event: 'evt_allow_1041', executed: true },
+      'INV-1042': { amount: 800, decision: 'ASK', reason: 'Matched human-approval capability.', outcome: 'Waiting for human approval.', event: 'evt_ask_1042', executed: false, approved: false },
+      'INV-1043': { amount: 8400, decision: 'DENY', reason: 'No matching capability or constraints were satisfied.', outcome: 'Payment execution blocked.', event: 'evt_deny_1043', executed: false }
     };
+
     function render(id) {
       const x = scenarios[id];
-      document.getElementById('detail').innerHTML = `<div class="sub">${id} • Northwind Industrial</div><h2>Authority decision</h2><div class="decision">${x.decision}</div><p>${x.reason}</p><div class="facts"><div class="fact"><span>Requested</span>$${x.amount.toLocaleString()}</div><div class="fact"><span>Delegated limit</span>$1,000</div><div class="fact"><span>Outcome</span>${x.outcome}</div></div>`;
+      document.querySelectorAll('.invoice').forEach(b => b.classList.toggle('active', b.dataset.id === id));
+      const action = x.decision === 'ASK' ? '<button class="primary" id="approve">Approve payment</button>' : '';
+      document.getElementById('detail').innerHTML = `
+        <div class="sub">${id} • Northwind Industrial</div>
+        <h2>Authority decision</h2>
+        <div class="decision">${x.decision}</div>
+        <p>${x.reason}</p>
+        <div class="facts">
+          <div class="fact"><span>Requested</span>$${x.amount.toLocaleString()}</div>
+          <div class="fact"><span>Delegated limit</span>$1,000</div>
+          <div class="fact"><span>Outcome</span><b id="outcomeText">${x.outcome}</b></div>
+        </div>
+        <div class="actions">${action}</div>
+      `;
+      if (x.decision === 'ASK') document.getElementById('approve').addEventListener('click', () => approve(id));
+      renderLedger(id);
+    }
+
+    function approve(id) {
+      const x = scenarios[id];
+      x.approved = true;
+      x.executed = true;
+      x.outcome = 'Human approval recorded; simulated payment submitted.';
+      document.getElementById('outcomeText').textContent = x.outcome;
+      const button = document.getElementById('approve');
+      if (button) button.disabled = true;
+      renderLedger(id);
+    }
+
+    function renderLedger(id) {
+      const x = scenarios[id];
+      const approvalLine = x.decision === 'ASK' ? (x.approved ? 'approval             approved by finance.manager@example.com' : 'approval             pending') : 'approval             not required';
+      const execLine = x.executed ? 'execution_attempt    request_payment → submitted' : x.decision === 'DENY' ? 'execution_attempt    request_payment → blocked' : 'execution_attempt    not yet invoked';
+      const destinationLine = x.executed ? 'destination          payments:demo-ledger → reached' : 'destination          payments:demo-ledger → not reached';
       document.getElementById('ledger').textContent = [
         `event_id: ${x.event}`,
-        'request        invoice.process', 'evidence       vendor + amount + source', 'proposal       payments:create',
-        `authorization  ${x.decision}`, x.decision === 'ASK' ? 'approval        pending' : `execution       ${x.decision === 'ALLOW' ? 'submitted' : 'blocked'}`,
-        `outcome        ${x.outcome}`, 'integrity      SHA-256 receipt'
+        'request              invoice.process',
+        'evidence             vendor + amount + source',
+        'proposal             payments:create',
+        `authorization        ${x.decision}`,
+        approvalLine,
+        execLine,
+        destinationLine,
+        `outcome              ${x.outcome}`,
+        'integrity            SHA-256 receipt'
       ].join('\n');
     }
-    document.querySelectorAll('button[data-id]').forEach((b) => b.addEventListener('click', () => render(b.dataset.id)));
+
+    document.querySelectorAll('.invoice').forEach(b => b.addEventListener('click', () => render(b.dataset.id)));
     render('INV-1043');
   </script>
 </body>
