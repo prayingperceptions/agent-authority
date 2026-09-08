@@ -251,24 +251,6 @@ The reference implementation rejects privilege escalation and child authority th
 
 ---
 
-## 📦 Packages
-
-### `@jubileelabs/agent-authority-core`
-
-Passport, Contract, Gate, delegation, approvals, Authority Score, signed events, and evidence helpers.
-
-### `@jubileelabs/agent-box`
-
-Contract-aware execution workspace and executor adapters.
-
-### `@jubileelabs/agent-authority-cli`
-
-CLI utilities for local protocol workflows.
-
-The packages are currently developed as a source workspace. Registry publication will follow API stabilization.
-
----
-
 ## 🏗️ Repository Structure
 
 ```text
@@ -308,7 +290,7 @@ agent-authority/
 - Contract-bound AgentBox workspace
 - deterministic Authority Score
 - process execution with timeout
-- smoke and red-team regression tests
+- smoke and adversarial regression tests
 
 Not production-hardened yet:
 
