@@ -8,7 +8,7 @@ import {
   authorityScoreMarkdown,
   type ActionRequest,
   type AgentContract
-} from '@jubileelabs/agent-authority-core';
+} from 'agent-authority-core';
 
 const args = process.argv.slice(2);
 
