@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { AgentAuthorityAdapter, authorityScore, buildContract } from './authority.js';
 import { makeReceipt, printReceipt, type LedgerEvent } from './ledger.js';
 import { checkInvoicePolicy } from './policy.js';
@@ -17,10 +18,39 @@ const invoices: Invoice[] = [
   { invoiceId: 'INV-1043', vendorId: 'V-021', vendorName: 'Northwind Industrial', amount: 8400, currency: 'USD', description: 'Emergency equipment replacement', source: 'ap:inbox/INV-1043.pdf' },
 ];
 
+function digest(value: unknown): string {
+  const canonicalize = (v: unknown): string => {
+    if (v === null || typeof v !== 'object') return JSON.stringify(v);
+    if (Array.isArray(v)) return `[${v.map(canonicalize).join(',')}]`;
+    const record = v as Record<string, unknown>;
+    return `{${Object.keys(record).sort().map(k => `${JSON.stringify(k)}:${canonicalize(record[k])}`).join(',')}}`;
+  };
+  return createHash('sha256').update(canonicalize(value), 'utf8').digest('hex');
+}
+
+function approvePayment(args: {
+  event: { decision: string; actionDigest: string };
+  request: { agentId: string; resource: string; action: string; input?: Record<string, unknown> };
+  approver: string;
+}): { approved: boolean; reason: string; approvalId: string } {
+  const amount = args.request.input?.amount;
+  const expectedDigest = digest(args.request);
+  if (args.event.decision !== 'ask') return { approved: false, reason: 'Approval is only valid for ASK decisions.', approvalId: 'none' };
+  if (expectedDigest !== args.event.actionDigest) return { approved: false, reason: 'Approval does not match the exact authorized action.', approvalId: 'none' };
+  if (args.request.agentId !== agentId || args.request.resource !== 'payments' || args.request.action !== 'create') {
+    return { approved: false, reason: 'Approval target does not match the payment action.', approvalId: 'none' };
+  }
+  if (typeof amount !== 'number' || amount <= 500 || amount > 1000) {
+    return { approved: false, reason: 'Approval amount is outside the human-review tier.', approvalId: 'none' };
+  }
+  return { approved: true, reason: `Approved by ${args.approver} for this exact action.`, approvalId: `approval_${args.event.actionDigest.slice(0, 12)}` };
+}
+
 console.log('AUTHORITY OPS');
 console.log('Professional invoice agent + delegated authority demo');
 console.log(`Authority Score: ${authorityScore(contract)}/100`);
 console.log('Delegated payment limit: $1,000 USD');
+console.log('Autonomous: ≤ $500 | Human approval: $501–$1,000 | Deny: > $1,000');
 
 for (const invoice of invoices) {
   console.log('\n══════════════════════════════════════════');
@@ -47,17 +77,32 @@ for (const invoice of invoices) {
 
   if (result.decision === 'allow') {
     console.log('Execution: simulated payment submitted.');
-    tools.push({ name: 'request_payment', input: proposal, output: { paymentId: 'PAY-DEMO-1041', status: 'submitted' }, resultStatus: 'success' });
+    tools.push({ name: 'request_payment', input: proposal, output: { paymentId: `PAY-DEMO-${invoice.invoiceId.slice(-4)}`, status: 'submitted' }, resultStatus: 'success' });
     extras.push({ type: 'execution_attempt', at: new Date().toISOString(), payload: { tool: 'request_payment', status: 'submitted' } });
-    extras.push({ type: 'destination', at: new Date().toISOString(), payload: { destination: 'payments:demo-ledger' } });
-    extras.push({ type: 'outcome', at: new Date().toISOString(), payload: { status: 'completed', paymentId: 'PAY-DEMO-1041' } });
+    extras.push({ type: 'destination', at: new Date().toISOString(), payload: { destination: proposal.destination } });
+    extras.push({ type: 'outcome', at: new Date().toISOString(), payload: { status: 'completed', paymentId: `PAY-DEMO-${invoice.invoiceId.slice(-4)}` } });
   } else if (result.decision === 'ask') {
-    console.log('Execution: waiting for human approval.');
-    extras.push({ type: 'approval', at: new Date().toISOString(), payload: { status: 'pending', reason: 'Human approval required by authority policy.' } });
-    extras.push({ type: 'outcome', at: new Date().toISOString(), payload: { status: 'approval_required' } });
+    console.log('Approval: human review requested.');
+    const approval = approvePayment({
+      event,
+      request: { agentId, resource: 'payments', action: 'create', input: { currency: invoice.currency, amount: invoice.amount } },
+      approver: 'finance.manager@example.com'
+    });
+    console.log(`Approval: ${approval.approved ? 'APPROVED' : 'REJECTED'} — ${approval.reason}`);
+    extras.push({ type: 'approval', at: new Date().toISOString(), payload: { approvalId: approval.approvalId, status: approval.approved ? 'approved' : 'rejected', approver: 'finance.manager@example.com', actionDigest: event.actionDigest } });
+    if (approval.approved) {
+      console.log('Execution: simulated payment submitted after approval.');
+      tools.push({ name: 'request_payment', input: proposal, output: { paymentId: `PAY-DEMO-${invoice.invoiceId.slice(-4)}`, status: 'submitted' }, resultStatus: 'success' });
+      extras.push({ type: 'execution_attempt', at: new Date().toISOString(), payload: { tool: 'request_payment', status: 'submitted', approvalId: approval.approvalId } });
+      extras.push({ type: 'destination', at: new Date().toISOString(), payload: { destination: proposal.destination } });
+      extras.push({ type: 'outcome', at: new Date().toISOString(), payload: { status: 'completed', paymentId: `PAY-DEMO-${invoice.invoiceId.slice(-4)}`, approvalId: approval.approvalId } });
+    } else {
+      extras.push({ type: 'outcome', at: new Date().toISOString(), payload: { status: 'approval_rejected', reason: approval.reason } });
+    }
   } else {
     console.log('Execution: BLOCKED — no payment tool invocation permitted.');
     extras.push({ type: 'execution_attempt', at: new Date().toISOString(), payload: { tool: 'request_payment', status: 'blocked' } });
+    extras.push({ type: 'destination', at: new Date().toISOString(), payload: { destination: proposal.destination, reached: false } });
     extras.push({ type: 'outcome', at: new Date().toISOString(), payload: { status: 'blocked', reason: result.reasons[0] } });
   }
 
