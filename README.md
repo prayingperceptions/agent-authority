@@ -264,19 +264,16 @@ The goal here is narrower:
 
 ## 📦 Installation
 
-### Node.js / TypeScript
+### Local workspace
 
-```bash
-npm install @jubileelabs/agent-authority-core
-npm install @jubileelabs/agent-box
-```
-
-### Build locally
+Use the repository workspace while the packages are in developer preview:
 
 ```bash
 npm install
 npm run build
 ```
+
+The package names are reserved for registry publication after the API stabilizes.
 
 ### Tests
 
@@ -309,13 +306,13 @@ agent-authority/
 │   ├── gate-demo.ts
 │   └── ledger-interop/
 ├── tests/
-│   ├── core.test.ts
+│   ├── core-smoke.mjs
 │   ├── smoke.mjs
-│   └── box-smoke.mjs
+│   ├── box-smoke.mjs
+│   └── red-team.mjs
 └── docs/
     ├── PROTOCOL.md
     ├── IMPLEMENTATION.md
-    ├── OPEN-AGENT-LEDGER-INTEGRATION.md
     └── THREAT_MODEL.md
 ```
 
@@ -366,7 +363,7 @@ The likely paid layer is **operational convenience**, not “unlocking the proto
 - White-label institutional deployments
 - Support and implementation
 
-This follows the market's existing willingness to pay for hosted agent infrastructure while preserving an open local-first core. For comparison, LangSmith currently offers a free developer tier, paid team pricing, usage-based infrastructure, and custom enterprise options; verify current pricing before using it in sales collateral.
+This follows the market's existing willingness to pay for hosted agent infrastructure while preserving an open local-first core.
 
 ### A faster path to the first $100K
 
@@ -425,7 +422,7 @@ Do not manufacture adoption numbers or call it launched until the public reposit
 
 ## 🧪 Current Status
 
-**v0.1.4 release candidate**
+**v0.1.6 developer preview**
 
 Working today:
 
@@ -442,6 +439,7 @@ Working today:
 - ✅ local disposable workspace lifecycle
 - ✅ process execution with timeout
 - ✅ smoke tests for core + Box + Ledger
+- ✅ red-team regression suite
 
 Not production-hardened yet:
 
@@ -464,7 +462,7 @@ Never put secrets into Contracts, action logs, receipts, or example fixtures.
 
 The current Box implementation is not a hardened sandbox. For hostile code, add an OS/container/VM isolation layer before relying on it.
 
-For security reports, see `SECURITY.md` once the public repository is established.
+For security reports, see `SECURITY.md`.
 
 ---
 
@@ -499,7 +497,7 @@ Support can come through contributors, sponsors, paid implementation, hosted inf
 
 ## 📄 License
 
-Apache-2.0
+MIT
 
 ---
 
@@ -507,4 +505,3 @@ Apache-2.0
 
 - NIST: AI agent identity and authorization research
 - Model Context Protocol: authorization and security specifications
-- LangSmith: agent observability, governance, deployment, and pricing
