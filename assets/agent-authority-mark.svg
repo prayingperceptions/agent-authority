@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 716 716" role="img" aria-labelledby="title desc">
+  <title id="title">Agent Authority mark</title>
+  <desc id="desc">A dark shield containing a stylized A with three blue authority nodes.</desc>
+  <defs>
+    <linearGradient id="navy" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#15264A"/>
+      <stop offset="1" stop-color="#08142E"/>
+    </linearGradient>
+    <linearGradient id="blue" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2B74FF"/>
+      <stop offset="1" stop-color="#0B4DFF"/>
+    </linearGradient>
+  </defs>
+  <path fill="none" stroke="url(#navy)" stroke-width="46" stroke-linejoin="round" d="M358 82 170 194v236c0 96 63 160 188 219 125-59 188-123 188-219V194L358 82Z"/>
+  <path fill="url(#navy)" d="m358 161 124 236-46 26-37-70-41 24-41-24-37 70-46-26 124-236Zm0 93-24 43 24 14 24-14-24-43Z"/>
+  <path fill="none" stroke="url(#navy)" stroke-width="25" stroke-linecap="round" d="M358 332v140M270 288l-68-40M446 288l68-40"/>
+  <circle cx="202" cy="246" r="38" fill="url(#blue)"/>
+  <circle cx="514" cy="246" r="38" fill="url(#blue)"/>
+  <circle cx="358" cy="334" r="43" fill="#0A1733" stroke="url(#blue)" stroke-width="14"/>
+  <circle cx="358" cy="334" r="17" fill="url(#blue)"/>
+</svg>
