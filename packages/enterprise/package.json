@@ -1,6 +1,6 @@
 {
   "name": "agent-authority-enterprise",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "private": false,
   "description": "Enterprise control-plane primitives and authenticated HTTP service for Agent Authority.",
   "license": "MIT",
@@ -11,6 +11,7 @@
     ".": "./dist/index.js",
     "./jwt": "./dist/jwt.js",
     "./server": "./dist/server.js",
+    "./store": "./dist/store.js",
     "./postgres": "./dist/postgres.js"
   },
   "scripts": {

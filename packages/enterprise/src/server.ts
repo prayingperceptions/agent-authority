@@ -1,140 +1,26 @@
 import { createServer as createHttpServer, type IncomingMessage, type ServerResponse } from 'node:http';
-import { randomUUID } from 'node:crypto';
-import { activatePolicy, authorize, createEnterpriseState, issueEnterpriseContract, registerPolicy, revokeContract, type EnterprisePrincipal, type EnterpriseState, type EnterpriseActionRequest, type PolicyVersion } from './index.js';
+import { createHash, randomUUID } from 'node:crypto';
+import { createApprovalRequest, digest as canonicalDigest, evaluate, type ActionRequest, type LedgerReceiptV1 } from 'agent-authority-core';
+import { issueEnterpriseContract, type EnterprisePrincipal, type EnterpriseActionRequest, type EnterpriseState, type PolicyVersion } from './index.js';
 import { verifyJwt, type JwtOptions, type Principal } from './jwt.js';
+import { InMemoryEnterpriseStore, type EnterpriseStore, type StoredReceipt } from './store.js';
 
-export interface EnterpriseServerOptions {
-  state?: EnterpriseState;
-  jwt?: JwtOptions;
-  maxBodyBytes?: number;
-  resolvePrincipal?: (authorization: string | undefined) => Promise<EnterprisePrincipal>;
-}
-
-const json = (res: ServerResponse, status: number, body: unknown) => {
-  res.statusCode = status;
-  res.setHeader('content-type', 'application/json; charset=utf-8');
-  res.end(JSON.stringify(body));
-};
-
-const securityHeaders = (res: ServerResponse) => {
-  res.setHeader('cache-control', 'no-store');
-  res.setHeader('x-content-type-options', 'nosniff');
-  res.setHeader('x-frame-options', 'DENY');
-  res.setHeader('referrer-policy', 'no-referrer');
-};
-
-async function readJson(req: IncomingMessage, maxBodyBytes: number): Promise<any> {
-  let size = 0;
-  const chunks: Buffer[] = [];
-  for await (const chunk of req) {
-    const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
-    size += buffer.length;
-    if (size > maxBodyBytes) throw new Error('request_too_large');
-    chunks.push(buffer);
-  }
-  if (!chunks.length) return {};
-  try { return JSON.parse(Buffer.concat(chunks).toString('utf8')); }
-  catch { throw new Error('invalid_json'); }
-}
-
-function requireRole(principal: EnterprisePrincipal, role: string): void {
-  if (!principal.roles.includes(role)) throw new Error('forbidden');
-}
-
-function policyFor(state: EnterpriseState, tenantId: string, policyId: string, version: number): PolicyVersion {
-  const policy = state.policies.get(`${tenantId}:${policyId}:${version}`);
-  if (!policy) throw new Error('policy_not_found');
-  return policy;
-}
-
-async function defaultPrincipal(auth: string | undefined, jwt: JwtOptions): Promise<EnterprisePrincipal> {
-  const principal: Principal = await verifyJwt(auth, jwt);
-  return principal;
-}
-
-function validateActionRequest(request: unknown): asserts request is EnterpriseActionRequest {
-  if (!request || typeof request !== 'object') throw new Error('request_invalid');
-  const candidate = request as Record<string, unknown>;
-  if (typeof candidate.agentId !== 'string' || !candidate.agentId) throw new Error('request_agent_id_required');
-  if (typeof candidate.resource !== 'string' || !candidate.resource) throw new Error('request_resource_required');
-  if (typeof candidate.action !== 'string' || !candidate.action) throw new Error('request_action_required');
-  if (typeof candidate.nonce !== 'string' || candidate.nonce.length < 16 || candidate.nonce.length > 256) throw new Error('request_nonce_invalid');
-  if (candidate.input !== undefined && (typeof candidate.input !== 'object' || candidate.input === null || Array.isArray(candidate.input))) throw new Error('request_input_invalid');
-}
-
-export function createEnterpriseServer(options: EnterpriseServerOptions) {
-  const state = options.state ?? createEnterpriseState();
-  const maxBodyBytes = options.maxBodyBytes ?? 256 * 1024;
-  if (!options.resolvePrincipal && !options.jwt) throw new Error('jwt_configuration_required');
-
-  const resolvePrincipal = options.resolvePrincipal ?? ((auth) => defaultPrincipal(auth, options.jwt!));
-
-  return createHttpServer(async (req, res) => {
-    securityHeaders(res);
-    if (req.method === 'OPTIONS') { res.statusCode = 204; res.end(); return; }
-
-    try {
-      const url = new URL(req.url ?? '/', 'http://localhost');
-      if (req.method === 'GET' && url.pathname === '/healthz') return json(res, 200, { ok: true });
-      if (req.method === 'GET' && url.pathname === '/readyz') return json(res, 200, { ok: true, policies: state.policies.size, contracts: state.contracts.size });
-
-      const principal = await resolvePrincipal(req.headers.authorization);
-      const parts = url.pathname.split('/').filter(Boolean);
-
-      if (req.method === 'POST' && parts.length === 2 && parts[0] === 'v1' && parts[1] === 'policies') {
-        requireRole(principal, 'policy-admin');
-        const body = await readJson(req, maxBodyBytes) as PolicyVersion;
-        if (body.tenantId !== principal.tenantId) throw new Error('tenant_mismatch');
-        registerPolicy(state, principal, body);
-        return json(res, 201, body);
-      }
-
-      if (req.method === 'POST' && parts.length === 4 && parts[0] === 'v1' && parts[1] === 'policies' && parts[3] === 'activate') {
-        requireRole(principal, 'policy-admin');
-        const policyId = decodeURIComponent(parts[2]);
-        const body = await readJson(req, maxBodyBytes) as { version?: number };
-        if (!Number.isInteger(body.version)) throw new Error('policy_version_required');
-        const version = body.version as number;
-        const policy = policyFor(state, principal.tenantId, policyId, version);
-        if (policy.status === 'retired') throw new Error('retired_policy_cannot_activate');
-        return json(res, 200, activatePolicy(state, principal, policyId, version));
-      }
-
-      if (req.method === 'POST' && parts.length === 2 && parts[0] === 'v1' && parts[1] === 'contracts') {
-        requireRole(principal, 'contract-admin');
-        const body = await readJson(req, maxBodyBytes) as { agentId?: string; policyId?: string; policyVersion?: number; purpose?: string; expiresAt?: string };
-        if (!body.agentId || !body.policyId || !Number.isInteger(body.policyVersion) || !body.purpose || !body.expiresAt) throw new Error('contract_fields_required');
-        const policyVersion = body.policyVersion as number;
-        const policy = policyFor(state, principal.tenantId, body.policyId, policyVersion);
-        const binding = issueEnterpriseContract({ principal, agentId: body.agentId, policy, purpose: body.purpose, expiresAt: body.expiresAt });
-        state.contracts.set(`${principal.tenantId}:${binding.contract.contractId}`, binding);
-        return json(res, 201, binding);
-      }
-
-      if (req.method === 'POST' && parts.length === 2 && parts[0] === 'v1' && parts[1] === 'check') {
-        const body = await readJson(req, maxBodyBytes) as { contractId?: string; correlationId?: string; request?: unknown };
-        if (!body.contractId || !body.request) throw new Error('check_fields_required');
-        validateActionRequest(body.request);
-        const binding = state.contracts.get(`${principal.tenantId}:${body.contractId}`);
-        if (!binding) throw new Error('contract_not_found');
-        const event = authorize(state, principal, body.correlationId ?? `corr_${randomUUID()}`, binding, body.request);
-        return json(res, 200, event);
-      }
-
-      if (req.method === 'POST' && parts.length === 3 && parts[0] === 'v1' && parts[1] === 'revocations' && parts[2] === 'contract') {
-        requireRole(principal, 'security-admin');
-        const body = await readJson(req, maxBodyBytes) as { contractId?: string };
-        if (!body.contractId) throw new Error('contract_id_required');
-        if (!state.contracts.has(`${principal.tenantId}:${body.contractId}`)) throw new Error('contract_not_found');
-        revokeContract(state, principal, body.contractId);
-        return json(res, 200, { revoked: true, contractId: body.contractId });
-      }
-
-      return json(res, 404, { error: 'not_found' });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'internal_error';
-      const status = message === 'forbidden' ? 403 : message === 'not_found' ? 404 : message.startsWith('jwt_') || message.includes('bearer') ? 401 : message === 'tenant_mismatch' ? 403 : message === 'request_too_large' ? 413 : 400;
-      return json(res, status, { error: message });
-    }
-  });
-}
+export interface EnterpriseServerOptions { store?: EnterpriseStore; state?: EnterpriseState; jwt?: JwtOptions; maxBodyBytes?: number; resolvePrincipal?: (authorization:string|undefined)=>Promise<EnterprisePrincipal>; }
+const json=(res:ServerResponse,status:number,body:unknown)=>{res.statusCode=status;res.setHeader('content-type','application/json; charset=utf-8');res.end(JSON.stringify(body));};
+const securityHeaders=(res:ServerResponse)=>{res.setHeader('cache-control','no-store');res.setHeader('x-content-type-options','nosniff');res.setHeader('x-frame-options','DENY');res.setHeader('referrer-policy','no-referrer');};
+async function readJson(req:IncomingMessage,max:number):Promise<any>{let n=0;const chunks:Buffer[]=[];for await(const c of req){const b=Buffer.isBuffer(c)?c:Buffer.from(c);n+=b.length;if(n>max)throw new Error('request_too_large');chunks.push(b);}if(!chunks.length)return{};try{return JSON.parse(Buffer.concat(chunks).toString('utf8'));}catch{throw new Error('invalid_json');}}
+function requireRole(p:EnterprisePrincipal,r:string){if(!p.roles.includes(r))throw new Error('forbidden');}
+function validateRequest(x:unknown):asserts x is EnterpriseActionRequest{if(!x||typeof x!=='object')throw new Error('request_invalid');const c=x as Record<string,unknown>;if(typeof c.agentId!=='string'||!c.agentId)throw new Error('request_agent_id_required');if(typeof c.resource!=='string'||!c.resource)throw new Error('request_resource_required');if(typeof c.action!=='string'||!c.action)throw new Error('request_action_required');if(typeof c.nonce!=='string'||c.nonce.length<16||c.nonce.length>256)throw new Error('request_nonce_invalid');if(c.input!==undefined&&(typeof c.input!=='object'||c.input===null||Array.isArray(c.input)))throw new Error('request_input_invalid');}
+async function principal(auth:string|undefined,jwt:JwtOptions){const p:Principal=await verifyJwt(auth,jwt);return p;}
+function policyFrom(body:any,p:EnterprisePrincipal):PolicyVersion{if(!body||typeof body!=='object')throw new Error('policy_invalid');if(body.tenantId!==p.tenantId)throw new Error('tenant_mismatch');if(!body.policyId||!Number.isInteger(body.version)||!Array.isArray(body.capabilities))throw new Error('policy_fields_required');return{policyId:body.policyId,version:body.version,tenantId:p.tenantId,status:'draft',capabilities:body.capabilities,createdBy:p.subject,createdAt:new Date().toISOString()};}
+export function createEnterpriseServer(options:EnterpriseServerOptions){const store=options.store??new InMemoryEnterpriseStore();const max=options.maxBodyBytes??262144;if(!options.resolvePrincipal&&!options.jwt)throw new Error('jwt_configuration_required');const resolve=options.resolvePrincipal??((a)=>principal(a,options.jwt!));const init=store.init().then(async()=>{if(options.state&&store instanceof InMemoryEnterpriseStore){for(const policy of options.state.policies.values())try{await store.putPolicy(policy);}catch{} for(const binding of options.state.contracts.values())try{await store.putContract(binding);}catch{}}});return createHttpServer(async(req,res)=>{securityHeaders(res);try{await init;const u=new URL(req.url??'/','http://localhost');if(req.method==='OPTIONS'){res.statusCode=204;res.end();return;}if(req.method==='GET'&&u.pathname==='/healthz')return json(res,200,{ok:true});if(req.method==='GET'&&u.pathname==='/readyz'){const r=await store.readiness();return json(res,r.durable?200:503,{ok:r.durable,durable:r.durable});}const p=await resolve(req.headers.authorization);const parts=u.pathname.split('/').filter(Boolean);
+if(req.method==='POST'&&parts.length===2&&parts[0]==='v1'&&parts[1]==='policies'){requireRole(p,'policy-admin');const pol=policyFrom(await readJson(req,max),p);await store.putPolicy(pol);return json(res,201,pol);}
+if(req.method==='POST'&&parts.length===4&&parts[0]==='v1'&&parts[1]==='policies'&&parts[3]==='activate'){requireRole(p,'policy-admin');const b=await readJson(req,max);if(!Number.isInteger(b.version))throw new Error('policy_version_required');return json(res,200,await store.activatePolicy(p.tenantId,decodeURIComponent(parts[2]),b.version));}
+if(req.method==='POST'&&parts.length===2&&parts[0]==='v1'&&parts[1]==='contracts'){requireRole(p,'contract-admin');const b=await readJson(req,max);if(!b.agentId||!b.policyId||!Number.isInteger(b.policyVersion)||!b.purpose||!b.expiresAt)throw new Error('contract_fields_required');const pol=await store.getPolicy(p.tenantId,b.policyId,b.policyVersion);if(!pol||pol.status!=='active')throw new Error('active_policy_required');const binding=issueEnterpriseContract({principal:p,agentId:b.agentId,policy:pol,purpose:b.purpose,expiresAt:b.expiresAt});await store.putContract(binding);return json(res,201,binding);}
+if(req.method==='POST'&&parts.length===2&&parts[0]==='v1'&&parts[1]==='check'){const b=await readJson(req,max);if(!b.contractId||!b.request)throw new Error('check_fields_required');validateRequest(b.request);const binding=await store.getContract(p.tenantId,b.contractId);if(!binding)throw new Error('contract_not_found');if(binding.contract.subjectAgentId!==b.request.agentId)throw new Error('agent_contract_mismatch');const exp=Date.parse(binding.contract.expiresAt);if(!Number.isFinite(exp)||Date.now()>exp)throw new Error('contract_expired');const request:ActionRequest={agentId:b.request.agentId,resource:b.request.resource,action:b.request.action,input:b.request.input};const ad=canonicalDigest(request);const accepted=await store.consumeNonce(p.tenantId,b.request.nonce);const correlationId=b.correlationId??`corr_${randomUUID()}`;if(!accepted){const e={eventId:`event_${randomUUID()}`,correlationId,tenantId:p.tenantId,contractId:b.contractId,policyId:binding.policyId,policyVersion:binding.policyVersion,actionDigest:ad,request,decision:'deny' as const,reasons:['Action nonce has already been consumed.'],createdAt:new Date().toISOString()};await store.putEvent(e);return json(res,200,e);}const r=evaluate(binding.contract,request);const e={eventId:`event_${randomUUID()}`,correlationId,tenantId:p.tenantId,contractId:b.contractId,policyId:binding.policyId,policyVersion:binding.policyVersion,actionDigest:ad,request,decision:r.decision,reasons:r.reasons,createdAt:new Date().toISOString()};await store.putEvent(e);if(e.decision==='ask'){const approval=createApprovalRequest({contract:binding.contract,event:{version:'0.1',eventId:e.eventId,timestamp:e.createdAt,agentId:e.request.agentId,contractId:e.contractId,request:e.request,decision:e.decision,reasons:e.reasons},requestedBy:p.subject});approval.actionDigest=ad;await store.putApproval(p.tenantId,approval);return json(res,200,{...e,approvalId:approval.approvalId,approvalRequest:approval});}return json(res,200,e);}
+if(req.method==='POST'&&parts.length===4&&parts[0]==='v1'&&parts[1]==='approvals'&&parts[3]==='decide'){requireRole(p,'approver');const b=await readJson(req,max);if(b.decision!=='approved'&&b.decision!=='rejected')throw new Error('approval_decision_required');return json(res,200,await store.decideApproval(p.tenantId,decodeURIComponent(parts[2]),p.subject,b.decision,typeof b.reason==='string'?b.reason:undefined));}
+if(req.method==='POST'&&parts.length===4&&parts[0]==='v1'&&parts[1]==='approvals'&&parts[3]==='consume'){const b=await readJson(req,max);if(typeof b.actionDigest!=='string')throw new Error('action_digest_required');return json(res,200,await store.consumeApproval(p.tenantId,decodeURIComponent(parts[2]),b.actionDigest));}
+if(req.method==='POST'&&parts.length===3&&parts[0]==='v1'&&parts[1]==='revocations'&&parts[2]==='contract'){requireRole(p,'security-admin');const b=await readJson(req,max);if(!b.contractId)throw new Error('contract_id_required');if(!(await store.revokeContract(p.tenantId,b.contractId)))throw new Error('contract_not_found');return json(res,200,{revoked:true,contractId:b.contractId});}
+if(req.method==='POST'&&parts.length===2&&parts[0]==='v1'&&parts[1]==='receipts'){const b=await readJson(req,max) as {receipt?:LedgerReceiptV1;eventId?:string;actionDigest?:string;previousReceiptHash?:string};if(!b.receipt||!b.eventId||!b.actionDigest)throw new Error('receipt_fields_required');const e=await store.getEvent(p.tenantId,b.eventId);if(!e)throw new Error('event_not_found');if(e.actionDigest!==b.actionDigest)throw new Error('receipt_action_mismatch');const stored:StoredReceipt={tenantId:p.tenantId,receipt:b.receipt,eventId:b.eventId,actionDigest:b.actionDigest,previousReceiptHash:b.previousReceiptHash};await store.putReceipt(stored);return json(res,201,stored);}
+if(req.method==='GET'&&parts.length===3&&parts[0]==='v1'&&parts[1]==='receipts'){const r=await store.getReceipt(p.tenantId,decodeURIComponent(parts[2]));if(!r)throw new Error('receipt_not_found');return json(res,200,r);}return json(res,404,{error:'not_found'});
+}catch(err){const m=err instanceof Error?err.message:'internal_error';const s=m==='forbidden'?403:m.startsWith('jwt_')||m.includes('bearer')?401:['contract_not_found','policy_not_found','approval_not_found','receipt_not_found','event_not_found'].includes(m)?404:['tenant_mismatch','agent_contract_mismatch','receipt_action_mismatch'].includes(m)?403:m==='request_too_large'?413:400;return json(res,s,{error:m});}});}
