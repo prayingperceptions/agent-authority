@@ -78,10 +78,8 @@ export class PostgresEnterpriseStore {
   async getContract(tenantId: string, contractId: string): Promise<EnterpriseContract | undefined> {
     const r=await this.pool.query(`SELECT document, revoked_at FROM aa_enterprise_contracts WHERE tenant_id=$1 AND contract_id=$2`,[tenantId,contractId]);
     const row=r.rows[0];
-    if (!row) return undefined;
-    const binding = row.document as EnterpriseContract;
-    if (row.revoked_at) binding.contract.revokedAt = row.revoked_at.toISOString();
-    return binding;
+    if (!row || row.revoked_at) return undefined;
+    return row.document as EnterpriseContract;
   }
 
   async consumeNonce(tenantId: string, nonce: string): Promise<boolean> {
