@@ -1,7 +1,7 @@
 import { createServer as createHttpServer, type IncomingMessage, type ServerResponse } from 'node:http';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { createApprovalRequest, digest as canonicalDigest, evaluate, type ActionRequest, type LedgerReceiptV1 } from 'agent-authority-core';
-import type { EnterprisePrincipal, EnterpriseActionRequest, EnterpriseState, PolicyVersion } from './index.js';
+import { issueEnterpriseContract, type EnterprisePrincipal, type EnterpriseActionRequest, type EnterpriseState, type PolicyVersion } from './index.js';
 import { verifyJwt, type JwtOptions, type Principal } from './jwt.js';
 import { InMemoryEnterpriseStore, type EnterpriseStore, type StoredReceipt } from './store.js';
 
