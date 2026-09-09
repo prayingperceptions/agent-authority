@@ -1,6 +1,6 @@
 {
   "name": "agent-authority-enterprise",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": false,
   "description": "Enterprise control-plane primitives for Agent Authority.",
   "license": "MIT",
@@ -8,6 +8,6 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {"build":"tsc -p tsconfig.json"},
-  "dependencies": {"agent-authority-core":"0.1.6"},
-  "devDependencies": {"@types/node":"^24.3.0","typescript":"^5.9.2"}
+  "dependencies": {"agent-authority-core":"0.1.6","pg":"^8.16.3"},
+  "devDependencies": {"@types/node":"^24.3.0","@types/pg":"^8.15.5","typescript":"^5.9.2"}
 }
