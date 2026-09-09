@@ -84,6 +84,7 @@ test('revocation blocks an otherwise allowed contract', async () => {
       contractId,
       request: { agentId: 'agent-1', resource: 'payments', action: 'create', input: { currency: 'USD', destination: 'payments:demo' }, nonce: 'api-nonce-revoked-123456' }
     }, 'agent');
-    assert.equal(denied.data.decision, 'deny');
+    assert.equal(denied.res.status, 404);
+    assert.equal(denied.data.error, 'contract_not_found');
   });
 });
