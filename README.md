@@ -38,6 +38,29 @@ No account, API key, or model provider is required for the local demos.
 
 ---
 
+## 🏢 Enterprise path
+
+Agent Authority now includes an enterprise control-plane package under `packages/enterprise`.
+
+The enterprise path adds the operational controls needed around the portable core:
+
+- authenticated tenant context
+- immutable, versioned policies
+- contracts pinned to policy versions
+- single-use action nonces
+- contract revocation
+- human approval / separation of duties
+- OIDC/JWKS verification
+- durable PostgreSQL persistence primitives
+- correlation IDs and auditable authorization events
+- fail-closed behavior for missing or ambiguous security state
+
+Start with [`docs/ENTERPRISE-CONTROL-PLANE.md`](docs/ENTERPRISE-CONTROL-PLANE.md) and [`docs/SECURITY-AUDIT-ENTERPRISE-2026-09.md`](docs/SECURITY-AUDIT-ENTERPRISE-2026-09.md).
+
+The enterprise package is a production-oriented reference implementation, not an independent certification or third-party security assessment.
+
+---
+
 ## 🧭 The Model
 
 AI agents can read data, call tools, modify files, send messages, run code, and delegate work. The authority question is:
@@ -264,6 +287,7 @@ agent-authority/
 ├── schemas/
 ├── packages/
 │   ├── core/
+│   ├── enterprise/
 │   ├── box/
 │   └── cli/
 ├── examples/
@@ -275,7 +299,7 @@ agent-authority/
 
 ## 🧪 Current Status
 
-**v0.1.6 — Developer Preview**
+**v0.1.7 — Developer Preview + Enterprise Control-Plane Reference**
 
 - Ed25519 Passports
 - task-scoped Contracts
@@ -291,22 +315,18 @@ agent-authority/
 - deterministic Authority Score
 - process execution with timeout
 - smoke and adversarial regression tests
+- enterprise tenant-scoped control-plane primitives
+- OIDC/JWKS verification
+- immutable policy versions
+- PostgreSQL durability adapter
 
-Not production-hardened yet:
-
-- hardened VM/container isolation
-- production key management and rotation
-- fully distributed revocation and replay state
-- broad framework adapters
-- hosted control plane
+Not independently certified or third-party security audited. The enterprise path is a reference deployment baseline; production customers should complete deployment-specific security review, penetration testing, key-management review, and compliance assessment.
 
 ---
 
 ## 🛡️ Security
 
-This is a developer-preview reference implementation, not a complete security or compliance system.
-
-Read [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md) and [`docs/SECURITY-TESTING.md`](docs/SECURITY-TESTING.md) before using it for sensitive workloads.
+Read [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md), [`docs/SECURITY-TESTING.md`](docs/SECURITY-TESTING.md), [`docs/ENTERPRISE-CONTROL-PLANE.md`](docs/ENTERPRISE-CONTROL-PLANE.md), and [`docs/SECURITY-AUDIT-ENTERPRISE-2026-09.md`](docs/SECURITY-AUDIT-ENTERPRISE-2026-09.md) before using Agent Authority for sensitive workloads.
 
 Never put secrets into Contracts, action logs, receipts, or example fixtures.
 
