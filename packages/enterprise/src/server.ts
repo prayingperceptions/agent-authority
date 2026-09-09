@@ -1,6 +1,6 @@
 import { createServer as createHttpServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { randomUUID } from 'node:crypto';
-import { activatePolicy, authorize, createEnterpriseState, issueEnterpriseContract, registerPolicy, revokeContract, type EnterprisePrincipal, type EnterpriseState, type PolicyVersion } from './index.js';
+import { activatePolicy, authorize, createEnterpriseState, issueEnterpriseContract, registerPolicy, revokeContract, type EnterprisePrincipal, type EnterpriseState, type EnterpriseActionRequest, type PolicyVersion } from './index.js';
 import { verifyJwt, type JwtOptions, type Principal } from './jwt.js';
 
 export interface EnterpriseServerOptions {
@@ -52,6 +52,16 @@ async function defaultPrincipal(auth: string | undefined, jwt: JwtOptions): Prom
   return principal;
 }
 
+function validateActionRequest(request: unknown): asserts request is EnterpriseActionRequest {
+  if (!request || typeof request !== 'object') throw new Error('request_invalid');
+  const candidate = request as Record<string, unknown>;
+  if (typeof candidate.agentId !== 'string' || !candidate.agentId) throw new Error('request_agent_id_required');
+  if (typeof candidate.resource !== 'string' || !candidate.resource) throw new Error('request_resource_required');
+  if (typeof candidate.action !== 'string' || !candidate.action) throw new Error('request_action_required');
+  if (typeof candidate.nonce !== 'string' || candidate.nonce.length < 16 || candidate.nonce.length > 256) throw new Error('request_nonce_invalid');
+  if (candidate.input !== undefined && (typeof candidate.input !== 'object' || candidate.input === null || Array.isArray(candidate.input))) throw new Error('request_input_invalid');
+}
+
 export function createEnterpriseServer(options: EnterpriseServerOptions) {
   const state = options.state ?? createEnterpriseState();
   const maxBodyBytes = options.maxBodyBytes ?? 256 * 1024;
@@ -66,10 +76,7 @@ export function createEnterpriseServer(options: EnterpriseServerOptions) {
     try {
       const url = new URL(req.url ?? '/', 'http://localhost');
       if (req.method === 'GET' && url.pathname === '/healthz') return json(res, 200, { ok: true });
-
-      if (req.method === 'GET' && url.pathname === '/readyz') {
-        return json(res, 200, { ok: true, policies: state.policies.size, contracts: state.contracts.size });
-      }
+      if (req.method === 'GET' && url.pathname === '/readyz') return json(res, 200, { ok: true, policies: state.policies.size, contracts: state.contracts.size });
 
       const principal = await resolvePrincipal(req.headers.authorization);
       const parts = url.pathname.split('/').filter(Boolean);
@@ -103,8 +110,9 @@ export function createEnterpriseServer(options: EnterpriseServerOptions) {
       }
 
       if (req.method === 'POST' && parts.length === 2 && parts[0] === 'v1' && parts[1] === 'check') {
-        const body = await readJson(req, maxBodyBytes) as { contractId?: string; correlationId?: string; request?: any };
+        const body = await readJson(req, maxBodyBytes) as { contractId?: string; correlationId?: string; request?: unknown };
         if (!body.contractId || !body.request) throw new Error('check_fields_required');
+        validateActionRequest(body.request);
         const binding = state.contracts.get(`${principal.tenantId}:${body.contractId}`);
         if (!binding) throw new Error('contract_not_found');
         const event = authorize(state, principal, body.correlationId ?? `corr_${randomUUID()}`, binding, body.request);
@@ -123,7 +131,7 @@ export function createEnterpriseServer(options: EnterpriseServerOptions) {
       return json(res, 404, { error: 'not_found' });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'internal_error';
-      const status = message === 'forbidden' ? 403 : message === 'not_found' ? 404 : message.includes('jwt_') || message.includes('bearer') ? 401 : message === 'tenant_mismatch' ? 403 : message === 'request_too_large' ? 413 : 400;
+      const status = message === 'forbidden' ? 403 : message === 'not_found' ? 404 : message.startsWith('jwt_') || message.includes('bearer') ? 401 : message === 'tenant_mismatch' ? 403 : message === 'request_too_large' ? 413 : 400;
       return json(res, status, { error: message });
     }
   });
