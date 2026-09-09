@@ -93,17 +93,19 @@ export function createEnterpriseServer(options: EnterpriseServerOptions) {
         requireRole(principal, 'policy-admin');
         const policyId = decodeURIComponent(parts[2]);
         const body = await readJson(req, maxBodyBytes) as { version?: number };
-        if (!Number.isInteger(body.version)) throw new Error('policy_version_required');
-        const policy = policyFor(state, principal.tenantId, policyId, body.version);
+        const version = body.version;
+        if (!Number.isInteger(version)) throw new Error('policy_version_required');
+        const policy = policyFor(state, principal.tenantId, policyId, version);
         if (policy.status === 'retired') throw new Error('retired_policy_cannot_activate');
-        return json(res, 200, activatePolicy(state, principal, policyId, body.version));
+        return json(res, 200, activatePolicy(state, principal, policyId, version));
       }
 
       if (req.method === 'POST' && parts.length === 2 && parts[0] === 'v1' && parts[1] === 'contracts') {
         requireRole(principal, 'contract-admin');
         const body = await readJson(req, maxBodyBytes) as { agentId?: string; policyId?: string; policyVersion?: number; purpose?: string; expiresAt?: string };
-        if (!body.agentId || !body.policyId || !Number.isInteger(body.policyVersion) || !body.purpose || !body.expiresAt) throw new Error('contract_fields_required');
-        const policy = policyFor(state, principal.tenantId, body.policyId, body.policyVersion);
+        const policyVersion = body.policyVersion;
+        if (!body.agentId || !body.policyId || !Number.isInteger(policyVersion) || !body.purpose || !body.expiresAt) throw new Error('contract_fields_required');
+        const policy = policyFor(state, principal.tenantId, body.policyId, policyVersion);
         const binding = issueEnterpriseContract({ principal, agentId: body.agentId, policy, purpose: body.purpose, expiresAt: body.expiresAt });
         state.contracts.set(`${principal.tenantId}:${binding.contract.contractId}`, binding);
         return json(res, 201, binding);
