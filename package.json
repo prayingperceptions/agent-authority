@@ -9,23 +9,18 @@
   "bugs": {"url": "https://github.com/prayingperceptions/agent-authority/issues"},
   "homepage": "https://github.com/prayingperceptions/agent-authority#readme",
   "type": "module",
-  "workspaces": [
-    "packages/*"
-  ],
+  "workspaces": ["packages/*"],
   "scripts": {
     "build": "npm run build:core && npm run build:box && npm run build:cli && npm run build:enterprise",
     "build:core": "tsc -p packages/core/tsconfig.json",
     "build:cli": "tsc -p packages/cli/tsconfig.json",
     "build:enterprise": "tsc -p packages/enterprise/tsconfig.json",
-    "test": "npm run build && node tests/core-smoke.mjs && node tests/smoke.mjs && node tests/box-smoke.mjs && node tests/red-team.mjs && node tests/enterprise-smoke.mjs",
-    "test:enterprise": "npm run build:core && npm run build:enterprise && node tests/enterprise-smoke.mjs",
+    "test": "npm run build && node tests/core-smoke.mjs && node tests/smoke.mjs && node tests/box-smoke.mjs && node tests/red-team.mjs && node tests/enterprise-smoke.mjs && node tests/enterprise-api.mjs",
+    "test:enterprise": "npm run build:core && npm run build:enterprise && node tests/enterprise-smoke.mjs && node tests/enterprise-api.mjs",
     "demo": "npm run build:core && node examples/gate-demo.mjs",
     "demo:ledger": "npm run build:core && node examples/ledger-interop/index.mjs",
     "demo:score": "npm run build:core && tsc --target ES2022 --module NodeNext --moduleResolution NodeNext --strict --esModuleInterop --skipLibCheck examples/authority-score.ts --outDir .tmp-score && node .tmp-score/authority-score.js",
     "build:box": "tsc -p packages/box/tsconfig.json"
   },
-  "devDependencies": {
-    "typescript": "^5.9.2",
-    "@types/node": "^24.3.0"
-  }
+  "devDependencies": {"typescript": "^5.9.2", "@types/node": "^24.3.0"}
 }
