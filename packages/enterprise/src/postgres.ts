@@ -65,14 +65,23 @@ export class PostgresEnterpriseStore {
 
   async putContract(binding: EnterpriseContract): Promise<void> {
     await this.pool.query(
-      `INSERT INTO aa_enterprise_contracts (tenant_id,contract_id,document,revoked_at) VALUES ($1,$2,$3::jsonb,$4)`,
-      [binding.tenantId,binding.contract.contractId,JSON.stringify(binding),binding.contract.expiresAt]
+      `INSERT INTO aa_enterprise_contracts (tenant_id,contract_id,document,revoked_at) VALUES ($1,$2,$3::jsonb,NULL)`,
+      [binding.tenantId,binding.contract.contractId,JSON.stringify(binding)]
     );
   }
 
+  async revokeContract(tenantId: string, contractId: string): Promise<void> {
+    const r = await this.pool.query(`UPDATE aa_enterprise_contracts SET revoked_at=NOW() WHERE tenant_id=$1 AND contract_id=$2 AND revoked_at IS NULL`, [tenantId,contractId]);
+    if (r.rowCount !== 1) throw new Error('contract_not_found_or_already_revoked');
+  }
+
   async getContract(tenantId: string, contractId: string): Promise<EnterpriseContract | undefined> {
-    const r=await this.pool.query(`SELECT document FROM aa_enterprise_contracts WHERE tenant_id=$1 AND contract_id=$2`,[tenantId,contractId]);
-    return r.rows[0]?.document as EnterpriseContract | undefined;
+    const r=await this.pool.query(`SELECT document, revoked_at FROM aa_enterprise_contracts WHERE tenant_id=$1 AND contract_id=$2`,[tenantId,contractId]);
+    const row=r.rows[0];
+    if (!row) return undefined;
+    const binding = row.document as EnterpriseContract;
+    if (row.revoked_at) binding.contract.revokedAt = row.revoked_at.toISOString();
+    return binding;
   }
 
   async consumeNonce(tenantId: string, nonce: string): Promise<boolean> {
