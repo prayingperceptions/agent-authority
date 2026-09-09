@@ -22,5 +22,5 @@
     "demo:score": "npm run build:core && tsc --target ES2022 --module NodeNext --moduleResolution NodeNext --strict --esModuleInterop --skipLibCheck examples/authority-score.ts --outDir .tmp-score && node .tmp-score/authority-score.js",
     "build:box": "tsc -p packages/box/tsconfig.json"
   },
-  "devDependencies": {"typescript": "^5.9.2", "@types/node": "^24.3.0"}
+  "devDependencies": {"typescript": "^7.0.2", "@types/node": "^24.3.0"}
 }
