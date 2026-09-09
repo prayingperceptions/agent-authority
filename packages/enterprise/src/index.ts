@@ -8,6 +8,10 @@ export interface EnterprisePrincipal {
   roles: string[];
 }
 
+export interface EnterpriseActionRequest extends ActionRequest {
+  nonce: string;
+}
+
 export interface PolicyVersion {
   policyId: string;
   version: number;
@@ -98,19 +102,19 @@ export function issueEnterpriseContract(args: {
   return { contract, tenantId: args.principal.tenantId, policyId: args.policy.policyId, policyVersion: args.policy.version };
 }
 
-export function authorize(state: EnterpriseState, principal: EnterprisePrincipal, correlationId: string, binding: EnterpriseContract, request: ActionRequest): AuthorizationEvent {
-  if (binding.tenantId !== principal.tenantId) return deny(correlationId, principal.tenantId, binding, request, ['Tenant context does not match.']);
-  if (state.revoked.has(`${principal.tenantId}:${binding.contract.contractId}`)) return deny(correlationId, principal.tenantId, binding, request, ['Contract is revoked.']);
-  if (binding.contract.subjectAgentId !== request.agentId) return deny(correlationId, principal.tenantId, binding, request, ['Agent identity does not match contract subject.']);
+export function authorize(state: EnterpriseState, principal: EnterprisePrincipal, correlationId: string, binding: EnterpriseContract, request: EnterpriseActionRequest): AuthorizationEvent {
+  if (binding.tenantId !== principal.tenantId) return deny(correlationId, principal.tenantId, binding, coreRequest(request), ['Tenant context does not match.']);
+  if (state.revoked.has(`${principal.tenantId}:${binding.contract.contractId}`)) return deny(correlationId, principal.tenantId, binding, coreRequest(request), ['Contract is revoked.']);
+  if (binding.contract.subjectAgentId !== request.agentId) return deny(correlationId, principal.tenantId, binding, coreRequest(request), ['Agent identity does not match contract subject.']);
   const expires = Date.parse(binding.contract.expiresAt);
-  if (!Number.isFinite(expires) || expires < Date.now()) return deny(correlationId, principal.tenantId, binding, request, ['Contract is expired or invalid.']);
-  if (request.nonce.length < 16 || request.nonce.length > 256) return deny(correlationId, principal.tenantId, binding, request, ['Nonce length is outside accepted bounds.']);
+  if (!Number.isFinite(expires) || expires < Date.now()) return deny(correlationId, principal.tenantId, binding, coreRequest(request), ['Contract is expired or invalid.']);
+  if (request.nonce.length < 16 || request.nonce.length > 256) return deny(correlationId, principal.tenantId, binding, coreRequest(request), ['Nonce length is outside accepted bounds.']);
   const nonceKey = `${principal.tenantId}:${request.nonce}`;
-  if (state.nonces.has(nonceKey)) return deny(correlationId, principal.tenantId, binding, request, ['Action nonce has already been consumed.']);
+  if (state.nonces.has(nonceKey)) return deny(correlationId, principal.tenantId, binding, coreRequest(request), ['Action nonce has already been consumed.']);
   state.nonces.add(nonceKey);
 
-  const policy: AgentContract = { ...binding.contract, capabilities: binding.contract.capabilities };
-  const result = evaluate(policy, request);
+  const evaluatedRequest = coreRequest(request);
+  const result = evaluate(binding.contract, evaluatedRequest);
   return {
     eventId: `event_${randomUUID()}`,
     correlationId,
@@ -118,8 +122,8 @@ export function authorize(state: EnterpriseState, principal: EnterprisePrincipal
     contractId: binding.contract.contractId,
     policyId: binding.policyId,
     policyVersion: binding.policyVersion,
-    actionDigest: digest(request),
-    request,
+    actionDigest: digest(evaluatedRequest),
+    request: evaluatedRequest,
     decision: result.decision,
     reasons: result.reasons,
     createdAt: new Date().toISOString()
@@ -128,6 +132,10 @@ export function authorize(state: EnterpriseState, principal: EnterprisePrincipal
 
 export function revokeContract(state: EnterpriseState, principal: EnterprisePrincipal, contractId: string): void {
   state.revoked.add(`${principal.tenantId}:${contractId}`);
+}
+
+function coreRequest(request: EnterpriseActionRequest): ActionRequest {
+  return { agentId: request.agentId, resource: request.resource, action: request.action, input: request.input };
 }
 
 function deny(correlationId: string, tenantId: string, binding: EnterpriseContract, request: ActionRequest, reasons: string[]): AuthorizationEvent {
