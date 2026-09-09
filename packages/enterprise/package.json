@@ -1,13 +1,29 @@
 {
   "name": "agent-authority-enterprise",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": false,
-  "description": "Enterprise control-plane primitives for Agent Authority.",
+  "description": "Enterprise control-plane primitives and authenticated HTTP service for Agent Authority.",
   "license": "MIT",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "scripts": {"build":"tsc -p tsconfig.json"},
-  "dependencies": {"agent-authority-core":"0.1.6","pg":"^8.16.3"},
-  "devDependencies": {"@types/node":"^24.3.0","@types/pg":"^8.15.5","typescript":"^5.9.2"}
+  "exports": {
+    ".": "./dist/index.js",
+    "./jwt": "./dist/jwt.js",
+    "./server": "./dist/server.js",
+    "./postgres": "./dist/postgres.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/serve.js"
+  },
+  "dependencies": {
+    "agent-authority-core": "0.1.6",
+    "pg": "^8.16.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "@types/pg": "^8.15.5",
+    "typescript": "^5.9.2"
+  }
 }
