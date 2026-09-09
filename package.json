@@ -1,6 +1,6 @@
 {
   "name": "agent-authority",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "private": true,
   "description": "Open-source identity, authority contracts, delegation, policy enforcement, approvals, and audit primitives for AI agents.",
   "keywords": ["ai agents", "agent authorization", "agent identity", "agent permissions", "mcp security", "mcp authorization", "agent security", "capability security", "delegation", "least privilege", "ai safety", "typescript", "open source"],
@@ -13,10 +13,12 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run build:core && npm run build:box && npm run build:cli",
+    "build": "npm run build:core && npm run build:box && npm run build:cli && npm run build:enterprise",
     "build:core": "tsc -p packages/core/tsconfig.json",
     "build:cli": "tsc -p packages/cli/tsconfig.json",
-    "test": "npm run build && node tests/core-smoke.mjs && node tests/smoke.mjs && node tests/box-smoke.mjs && node tests/red-team.mjs",
+    "build:enterprise": "tsc -p packages/enterprise/tsconfig.json",
+    "test": "npm run build && node tests/core-smoke.mjs && node tests/smoke.mjs && node tests/box-smoke.mjs && node tests/red-team.mjs && node tests/enterprise-smoke.mjs",
+    "test:enterprise": "npm run build:core && npm run build:enterprise && node tests/enterprise-smoke.mjs",
     "demo": "npm run build:core && node examples/gate-demo.mjs",
     "demo:ledger": "npm run build:core && node examples/ledger-interop/index.mjs",
     "demo:score": "npm run build:core && tsc --target ES2022 --module NodeNext --moduleResolution NodeNext --strict --esModuleInterop --skipLibCheck examples/authority-score.ts --outDir .tmp-score && node .tmp-score/authority-score.js",
