@@ -66,7 +66,8 @@ const server = http.createServer(async (req, res) => {
 
     return send(res, 404, { error: 'not found', endpoints: ['/health', '/evaluate', '/validate'] });
   } catch (err) {
-    send(res, 500, { error: 'internal_error', detail: String(err && err.message || err) });
+    console.error('Unhandled server error:', err);
+    send(res, 500, { error: 'internal_error' });
   }
 });
 
