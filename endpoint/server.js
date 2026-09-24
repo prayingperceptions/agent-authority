@@ -10,8 +10,14 @@ import { evaluate, validateContract } from './core.js';
 
 const PORT = parseInt(process.env.PORT || '8786', 10);
 
-function send(res, status, obj) {
-  res.writeHead(status, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+function send(res, status, obj, addHeaders = {}) {
+  res.writeHead(status, {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
+    'Access-Control-Allow-Headers': 'content-type',
+    ...addHeaders
+  });
   res.end(JSON.stringify(obj, null, 2));
 }
 
@@ -28,6 +34,10 @@ const server = http.createServer(async (req, res) => {
   const path = url.pathname.replace(/\/+$/, '') || '/';
 
   try {
+    // CORS preflight: must be handled for the browser demo (POST with JSON).
+    if (method === 'OPTIONS') {
+      return send(res, 204, {}, {}); // 204 + CORS headers; no body
+    }
     if (method === 'GET' && path === '/health') {
       return send(res, 200, { ok: true, service: 'agent-authority', version: '0.1.6' });
     }
