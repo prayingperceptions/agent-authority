@@ -1,0 +1,10 @@
+{
+  "name": "agent-authority-endpoint",
+  "version": "0.1.6",
+  "description": "Agent Authority HTTP endpoint (permission pillar). Thin wrapper over agent-authority-core: evaluate (allow/ask/deny) + validate. Zero-dep Node, CORS for live demo.",
+  "type": "module",
+  "main": "server.js",
+  "scripts": { "start": "node server.js", "test": "node test.js" },
+  "engines": { "node": ">=18" },
+  "license": "MIT"
+}
